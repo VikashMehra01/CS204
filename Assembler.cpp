@@ -44,23 +44,38 @@ private:
     string lastLabel = "";
 
     unordered_map<string, string> opcodeTable = {
-        {"add", "0110011"}, {"sub", "0110011"}, {"sll", "0110011"}, {"slt", "0110011"}, {"sltu", "0110011"}, {"xor", "0110011"}, {"srl", "0110011"}, {"sra", "0110011"}, {"or", "0110011"}, {"and", "0110011"}, {"addi", "0010011"}, {"slti", "0010011"}, {"sltiu", "0010011"}, {"xori", "0010011"}, {"ori", "0010011"}, {"andi", "0010011"}, {"slli", "0010011"}, {"srli", "0010011"}, {"srai", "0010011"}, {"beq", "1100011"}, {"bne", "1100011"}, {"blt", "1100011"}, {"bge", "1100011"}, {"bltu", "1100011"}, {"bgeu", "1100011"}, {"lw", "0000011"}, {"sw", "0100011"}, {"jal", "1101111"}, {"lui", "0110111"}, {"auipc", "0010111"}, {"jalr", "1100111"}, {"lb", "0000011"}, {"lh", "0000011"}, {"lbu", "0000011"}, {"lhu", "0000011"}, {"sb", "0100011"}, {"sh", "0100011"}, {"addiw", "0011011"}, {"slliw", "0011011"}, {"srliw", "0011011"}, {"sraiw", "0011011"}};
+        {"add", "0110011"}, {"sub", "0110011"}, {"sll", "0110011"}, {"slt", "0110011"}, {"sltu", "0110011"}, {"xor", "0110011"}, {"srl", "0110011"}, {"sra", "0110011"}, {"or", "0110011"}, {"and", "0110011"}, {"addi", "0010011"}, {"slti", "0010011"}, {"sltiu", "0010011"}, {"xori", "0010011"}, {"ori", "0010011"}, {"andi", "0010011"}, {"slli", "0010011"}, {"srli", "0010011"}, {"srai", "0010011"}, {"beq", "1100011"}, {"bne", "1100011"}, {"blt", "1100011"}, {"bge", "1100011"}, {"bltu", "1100011"}, {"bgeu", "1100011"}, {"lw", "0000011"}, {"sw", "0100011"}, {"jal", "1101111"}, {"lui", "0110111"}, {"auipc", "0010111"}, {"jalr", "1100111"}, {"lb", "0000011"}, {"lh", "0000011"}, {"lbu", "0000011"}, {"lhu", "0000011"}, {"sb", "0100011"}, {"sh", "0100011"}, {"addiw", "0011011"}, {"slliw", "0011011"}, {"srliw", "0011011"}, {"sraiw", "0011011"}, {"sd", "0100011"}, {"ld", "0000011"}};
 
     unordered_map<string, string> funct3Table = {
-        {"add", "000"}, {"sub", "000"}, {"sll", "001"}, {"slt", "010"}, {"sltu", "011"}, {"xor", "100"}, {"srl", "101"}, {"sra", "101"}, {"or", "110"}, {"and", "111"}, {"addi", "000"}, {"slti", "010"}, {"sltiu", "011"}, {"xori", "100"}, {"ori", "110"}, {"andi", "111"}, {"slli", "001"}, {"srli", "101"}, {"srai", "101"}, {"beq", "000"}, {"bne", "001"}, {"blt", "100"}, {"bge", "101"}, {"bltu", "110"}, {"bgeu", "111"}, {"lw", "010"}, {"sw", "010"}, {"jal", "000"}, {"lui", "011"}, {"auipc", "011"}, {"jalr", "000"}, {"lb", "000"}, {"lh", "001"}, {"lbu", "100"}, {"lhu", "101"}, {"sb", "000"}, {"sh", "001"}, {"addiw", "000"}, {"slliw", "001"}, {"srliw", "101"}, {"sraiw", "101"}};
+        {"add", "000"}, {"sub", "000"}, {"sll", "001"}, {"slt", "010"}, {"sltu", "011"}, {"xor", "100"}, {"srl", "101"}, {"sra", "101"}, {"or", "110"}, {"and", "111"}, {"addi", "000"}, {"slti", "010"}, {"sltiu", "011"}, {"xori", "100"}, {"ori", "110"}, {"andi", "111"}, {"slli", "001"}, {"srli", "101"}, {"srai", "101"}, {"beq", "000"}, {"bne", "001"}, {"blt", "100"}, {"bge", "101"}, {"bltu", "110"}, {"bgeu", "111"}, {"lw", "010"}, {"sw", "010"}, {"jal", "000"}, {"lui", "011"}, {"auipc", "011"}, {"jalr", "000"}, {"lb", "000"}, {"lh", "001"}, {"lbu", "100"}, {"lhu", "101"}, {"sb", "000"}, {"sh", "001"}, {"addiw", "000"}, {"slliw", "001"}, {"srliw", "101"}, {"sraiw", "101"}, {"sd", "011"}};
 
     unordered_map<string, string> funct7Table = {
-        {"add", "0000000"}, {"sub", "0100000"}, {"sll", "0000000"}, {"slt", "0000000"}, {"sltu", "0000000"}, {"xor", "0000000"}, {"srl", "0000000"}, {"sra", "0100000"}, {"or", "0000000"}, {"and", "0000000"}, {"slli", "0000000"}, {"srli", "0000000"}, {"srai", "0100000"}, {"addiw", "0000000"}, {"slliw", "0000000"}, {"srliw", "0000000"}, {"sraiw", "0100000"}};
+        {"add", "0000000"}, {"sub", "0100000"}, {"sll", "0000000"}, {"slt", "0000000"}, {"sltu", "0000000"}, {"xor", "0000000"}, {"srl", "0000000"}, {"sra", "0100000"}, {"or", "0000000"}, {"and", "0000000"}, {"slli", "0000000"}, {"srli", "0000000"}, {"srai", "0100000"}, {"addiw", "0000000"}, {"slliw", "0000000"}, {"srliw", "0000000"}, {"sraiw", "0100000"}, {"sd", "0000000"}, {"ld", "0000000"}};
 
     unordered_map<string, string> instructionType = {
-        {"add", "R"}, {"sub", "R"}, {"sll", "R"}, {"slt", "R"}, {"sltu", "R"}, {"xor", "R"}, {"srl", "R"}, {"sra", "R"}, {"or", "R"}, {"and", "R"}, {"addi", "I"}, {"slti", "I"}, {"sltiu", "I"}, {"xori", "I"}, {"ori", "I"}, {"andi", "I"}, {"slli", "I"}, {"srli", "I"}, {"srai", "I"}, {"beq", "B"}, {"bne", "B"}, {"blt", "B"}, {"bge", "B"}, {"bltu", "B"}, {"bgeu", "B"}, {"lw", "I"}, {"sw", "S"}, {"jal", "J"}, {"lui", "U"}, {"auipc", "U"}, {"jalr", "I"}, {"lb", "I"}, {"lh", "I"}, {"lbu", "I"}, {"lhu", "I"}, {"sb", "S"}, {"sh", "S"}, {"addiw", "I"}, {"slliw", "I"}, {"srliw", "I"}, {"sraiw", "I"}};
+        {"add", "R"}, {"sub", "R"}, {"sll", "R"}, {"slt", "R"}, {"sltu", "R"}, {"xor", "R"}, {"srl", "R"}, {"sra", "R"}, {"or", "R"}, {"and", "R"}, {"addi", "I"}, {"slti", "I"}, {"sltiu", "I"}, {"xori", "I"}, {"ori", "I"}, {"andi", "I"}, {"slli", "I"}, {"srli", "I"}, {"srai", "I"}, {"beq", "B"}, {"bne", "B"}, {"blt", "B"}, {"bge", "B"}, {"bltu", "B"}, {"bgeu", "B"}, {"lw", "I"}, {"sw", "S"}, {"jal", "J"}, {"lui", "U"}, {"auipc", "U"}, {"jalr", "I"}, {"lb", "I"}, {"lh", "I"}, {"lbu", "I"}, {"lhu", "I"}, {"sb", "S"}, {"sh", "S"}, {"addiw", "I"}, {"slliw", "I"}, {"srliw", "I"}, {"sraiw", "I"}, {"sd", "S"}, {"ld", "I"}};
     string registerToBinary(const string &reg)
     {
+        if (reg[0] != 'x' || reg.size() < 2)
+        {
+            cerr << "Error: Invalid register format - " << reg << endl;
+            return "00000"; // Default to x0
+        }
+
         return bitset<5>(stoi(reg.substr(1))).to_string();
     }
 
     string immediateToBinary(int imm, int bits)
+
     {
+        int maxVal = (1 << (bits - 1)) - 1;
+        int minVal = -(1 << (bits - 1));
+
+        if (imm < minVal || imm > maxVal)
+        {
+            cerr << "Error: Immediate value out of range - " << imm << endl;
+            return bitset<32>(0).to_string().substr(32 - bits, bits); // Default to 0
+        }
         return bitset<32>(imm).to_string().substr(32 - bits, bits);
     }
 
@@ -80,13 +95,16 @@ private:
         }
         return hexResult;
     }
-    void handleDataDirective(const vector<string> &tokens)
+    void handleDataDirective(const vector<string> &tokens, ofstream &outputFile)
     {
         if (tokens.empty())
             return;
         string directive = tokens[0];
         if (tokens.size() < 2)
+        {
+            cerr << "Error: Missing operand for directive - " << directive << endl;
             return;
+        }
 
         if (directive == ".word")
         {
@@ -95,6 +113,7 @@ private:
                 dataTable.insert(lastLabel, dataAddress);
                 lastLabel.clear();
             }
+            outputFile << "0x" << hex << dataAddress << " ";
             for (size_t i = 1; i < tokens.size(); i++)
             {
                 int value = stoi(tokens[i]);
@@ -102,8 +121,10 @@ private:
                 {
                     dataSegment.push_back(to_string((value >> (j * 8)) & 0xFF));
                 }
+                outputFile << "0x" << hex << ((value) & 0xFF) << " ";
                 dataAddress += 4;
             }
+            outputFile << endl;
         }
         else if (directive == ".dword")
         {
@@ -115,12 +136,15 @@ private:
             for (size_t i = 1; i < tokens.size(); i++)
             {
                 int value = stoi(tokens[i]);
+                outputFile << "0x" << hex << dataAddress << " ";
                 for (int j = 0; j < 8; j++)
                 {
                     dataSegment.push_back(to_string((value >> (j * 8)) & 0xFF));
+                    outputFile << "0x" << hex << ((value >> (j * 8)) & 0xFF) << " ";
                 }
                 dataAddress += 8;
             }
+            outputFile << endl;
         }
         else if (directive == ".byte")
         {
@@ -129,12 +153,15 @@ private:
                 dataTable.insert(lastLabel, dataAddress);
                 lastLabel.clear();
             }
+            outputFile << "0x" << hex << dataAddress << " ";
             for (size_t i = 1; i < tokens.size(); i++)
             {
                 int value = stoi(tokens[i]);
                 dataSegment.push_back(to_string(value & 0xFF));
+                outputFile << "0x" << hex << (value & 0xFF) << " ";
                 dataAddress += 1;
             }
+            outputFile << endl;
         }
         else if (directive == ".half")
         {
@@ -143,15 +170,18 @@ private:
                 dataTable.insert(lastLabel, dataAddress);
                 lastLabel.clear();
             }
+            outputFile << "0x" << hex << dataAddress << " ";
             for (size_t i = 1; i < tokens.size(); i++)
             {
                 int value = stoi(tokens[i]);
                 for (int j = 0; j < 2; j++)
                 {
                     dataSegment.push_back(to_string((value >> (j * 8)) & 0xFF));
+                    outputFile << "0x" << hex << ((value >> (j * 8)) & 0xFF) << " ";
                 }
                 dataAddress += 2;
             }
+            outputFile << endl;
         }
         else if (directive == ".string" || directive == ".asciz")
         {
@@ -161,13 +191,20 @@ private:
                 dataTable.insert(lastLabel, dataAddress);
                 lastLabel.clear();
             }
+            outputFile << "0x" << hex << dataAddress << " ";
             for (char c : str)
             {
                 dataSegment.push_back(string(1, c));
+                outputFile << c << " ";
                 dataAddress += 1;
             }
-            dataSegment.push_back('\0'); // Null terminator
+            outputFile << endl;
+            dataSegment.push_back("\0"); // Null terminator
             dataAddress += 1;
+        }
+        else
+        {
+            cerr << "Error: Unsupported directive - " << directive << endl;
         }
     }
 
@@ -315,11 +352,13 @@ public:
                 continue;
             if (tokens[0] == ".text")
             {
+                outputFile << "0x" << hex << currentAddress << " # Text segment start" << endl;
                 inTextSegment = true;
                 continue;
             }
             else if (tokens[0] == ".data")
             {
+                outputFile << "0x" << hex << dataAddress << " # Data segment start" << endl;
                 inTextSegment = false;
                 continue;
             }
@@ -334,7 +373,7 @@ public:
                 else
                 {
                     lastLabel = label;
-                    handleDataDirective(vector<string>(tokens.begin() + 1, tokens.end()));
+                    handleDataDirective(vector<string>(tokens.begin() + 1, tokens.end()), outputFile);
                 }
             }
             else
@@ -350,7 +389,7 @@ public:
                         cerr << "Error: Data directive found without a preceding label!" << endl;
                         exit(1); // Stop execution since this is an error
                     }
-                    handleDataDirective(tokens);
+                    handleDataDirective(tokens, outputFile);
                 }
             }
         }

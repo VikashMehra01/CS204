@@ -1,4 +1,9 @@
-# R-type
+.data
+a: .word 9 8 9
+b: .word 9
+c: .string "vikash"
+.text
+ # R-type
 add x1, x2, x3
 sub x4, x5, x6
 sll x7, x8, x9
