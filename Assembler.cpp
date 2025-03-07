@@ -30,9 +30,18 @@ public:
 class Assembler
 {
 private:
+    const string TERMINATION_CODE = "0x00000013"; // nop instruction
+private:
     SymbolTable symTable;
-    int currentAddress = 0x1000;
+    SymbolTable dataTable;
+    int currentAddress = 0x00000000;
+    int dataAddress = 0x10000000;
+    int HeapAddress = 0x10008000;
+    int StackAddress = 0x7FFFFFDC;
     vector<string> outputLines;
+    vector<string> dataSegment;
+    bool inTextSegment = true;
+    string lastLabel = "";
 
     unordered_map<string, string> opcodeTable = {
         {"add", "0110011"}, {"sub", "0110011"}, {"sll", "0110011"}, {"slt", "0110011"}, {"sltu", "0110011"}, {"xor", "0110011"}, {"srl", "0110011"}, {"sra", "0110011"}, {"or", "0110011"}, {"and", "0110011"}, {"addi", "0010011"}, {"slti", "0010011"}, {"sltiu", "0010011"}, {"xori", "0010011"}, {"ori", "0010011"}, {"andi", "0010011"}, {"slli", "0010011"}, {"srli", "0010011"}, {"srai", "0010011"}, {"beq", "1100011"}, {"bne", "1100011"}, {"blt", "1100011"}, {"bge", "1100011"}, {"bltu", "1100011"}, {"bgeu", "1100011"}, {"lw", "0000011"}, {"sw", "0100011"}, {"jal", "1101111"}, {"lui", "0110111"}, {"auipc", "0010111"}, {"jalr", "1100111"}, {"lb", "0000011"}, {"lh", "0000011"}, {"lbu", "0000011"}, {"lhu", "0000011"}, {"sb", "0100011"}, {"sh", "0100011"}, {"addiw", "0011011"}, {"slliw", "0011011"}, {"srliw", "0011011"}, {"sraiw", "0011011"}};
@@ -71,6 +80,96 @@ private:
         }
         return hexResult;
     }
+    void handleDataDirective(const vector<string> &tokens)
+    {
+        if (tokens.empty())
+            return;
+        string directive = tokens[0];
+        if (tokens.size() < 2)
+            return;
+
+        if (directive == ".word")
+        {
+            if (!lastLabel.empty())
+            {
+                dataTable.insert(lastLabel, dataAddress);
+                lastLabel.clear();
+            }
+            for (size_t i = 1; i < tokens.size(); i++)
+            {
+                int value = stoi(tokens[i]);
+                for (int j = 0; j < 4; j++)
+                {
+                    dataSegment.push_back(to_string((value >> (j * 8)) & 0xFF));
+                }
+                dataAddress += 4;
+            }
+        }
+        else if (directive == ".dword")
+        {
+            if (!lastLabel.empty())
+            {
+                dataTable.insert(lastLabel, dataAddress);
+                lastLabel.clear();
+            }
+            for (size_t i = 1; i < tokens.size(); i++)
+            {
+                int value = stoi(tokens[i]);
+                for (int j = 0; j < 8; j++)
+                {
+                    dataSegment.push_back(to_string((value >> (j * 8)) & 0xFF));
+                }
+                dataAddress += 8;
+            }
+        }
+        else if (directive == ".byte")
+        {
+            if (!lastLabel.empty())
+            {
+                dataTable.insert(lastLabel, dataAddress);
+                lastLabel.clear();
+            }
+            for (size_t i = 1; i < tokens.size(); i++)
+            {
+                int value = stoi(tokens[i]);
+                dataSegment.push_back(to_string(value & 0xFF));
+                dataAddress += 1;
+            }
+        }
+        else if (directive == ".half")
+        {
+            if (!lastLabel.empty())
+            {
+                dataTable.insert(lastLabel, dataAddress);
+                lastLabel.clear();
+            }
+            for (size_t i = 1; i < tokens.size(); i++)
+            {
+                int value = stoi(tokens[i]);
+                for (int j = 0; j < 2; j++)
+                {
+                    dataSegment.push_back(to_string((value >> (j * 8)) & 0xFF));
+                }
+                dataAddress += 2;
+            }
+        }
+        else if (directive == ".string" || directive == ".asciz")
+        {
+            string str = tokens[1].substr(1, tokens[1].size() - 2);
+            if (!lastLabel.empty())
+            {
+                dataTable.insert(lastLabel, dataAddress);
+                lastLabel.clear();
+            }
+            for (char c : str)
+            {
+                dataSegment.push_back(string(1, c));
+                dataAddress += 1;
+            }
+            dataSegment.push_back('\0'); // Null terminator
+            dataAddress += 1;
+        }
+    }
 
     void encodeInstruction(const vector<string> &tokens)
     {
@@ -78,8 +177,12 @@ private:
             return;
         string instr = tokens[0];
         if (instructionType.find(instr) == instructionType.end())
+        {
+            cerr << "Error: Invalid instruction - " << instr << endl;
             return;
-        cout << instr << endl;
+        }
+
+        // cout << instr << endl;
         string binaryEncoding, breakdown, assemblyFormat;
         if (instructionType[instr] == "R")
         {
@@ -131,13 +234,6 @@ private:
             int offset = (labelAddress - currentAddress);
             // cout << offset << endl;
             string imm = immediateToBinary(offset, 13);
-            // cout << imm << endl;
-            // cout << currentAddress << endl;
-            // cout << labelAddress << endl;
-            // cout << imm << endl;
-            cout << tokens[1] << endl;
-            cout << tokens[2] << endl;
-            cout << tokens[3] << endl;
 
             binaryEncoding = imm[0] + imm.substr(2, 10) + registerToBinary(tokens[2]) +
                              registerToBinary(tokens[1]) + funct3Table[instr] +
@@ -217,14 +313,45 @@ public:
 
             if (tokens.empty())
                 continue;
+            if (tokens[0] == ".text")
+            {
+                inTextSegment = true;
+                continue;
+            }
+            else if (tokens[0] == ".data")
+            {
+                inTextSegment = false;
+                continue;
+            }
+
             if (tokens[0].back() == ':')
             {
-                symTable.insert(tokens[0].substr(0, tokens[0].size() - 1), currentAddress);
-                // currentAddress += 4;
+                string label = tokens[0].substr(0, tokens[0].size() - 1);
+                if (inTextSegment)
+                {
+                    symTable.insert(label, currentAddress);
+                }
+                else
+                {
+                    lastLabel = label;
+                    handleDataDirective(vector<string>(tokens.begin() + 1, tokens.end()));
+                }
             }
             else
             {
-                encodeInstruction(tokens);
+                if (inTextSegment)
+                {
+                    encodeInstruction(tokens);
+                }
+                else
+                {
+                    if (lastLabel.empty())
+                    {
+                        cerr << "Error: Data directive found without a preceding label!" << endl;
+                        exit(1); // Stop execution since this is an error
+                    }
+                    handleDataDirective(tokens);
+                }
             }
         }
 
@@ -232,6 +359,7 @@ public:
         {
             outputFile << output << endl;
         }
+        outputFile << "Vikash " << TERMINATION_CODE << "  # End of program" << endl;
         cout << "Assembly completed. Output written to " << outputFilename << endl;
     }
 };
