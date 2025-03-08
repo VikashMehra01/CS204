@@ -1,0 +1,61 @@
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: rgb(2, 0, 36);
+  background: linear-gradient(
+    90deg,
+    rgba(2, 0, 36, 1) 0%,
+    rgba(9, 9, 121, 1) 35%,
+    rgba(0, 212, 255, 1) 100%
+  );
+}
+
+.Assembler {
+  text-align: center;
+
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  height: 80vh;
+}
+.header {
+  text-align: left;
+  font-size: 36px;
+  margin-left: 20px;
+  color: yellow;
+}
+
+h1 {
+  text-align: center;
+  color: red;
+}
+.do {
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  /* width: 10%; */
+}
+.do button {
+  background-color: green;
+  border: none;
+  height: inherit;
+  font-size: 32px;
+  padding: 8px;
+  border-radius: 8px;
+}
+.code {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+textarea {
+  height: 100%;
+  padding: 10px;
+  background-color: #ccc;
+  margin: 10px 10px 0 10px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  resize: none;
+}
