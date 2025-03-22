@@ -78,76 +78,76 @@ private:
         {31, 0},
     };
     unordered_map<vector<string>, string, vector_hash> operation = {
-        {{"0110011", "0x00", "0x00"}, "add"},
-        {{"0110011", "0x00", "0x20"}, "sub"},
-        {{"0110011", "0x00", "0x01"}, "sll"},
-        {{"0110011", "0x00", "0x02"}, "slt"},
-        {{"0110011", "0x00", "0x03"}, "sltu"},
-        {{"0110011", "0x00", "0x04"}, "xor"},
-        {{"0110011", "0x00", "0x05"}, "srl"},
-        {{"0110011", "0x20", "0x05"}, "sra"},
-        {{"0110011", "0x00", "0x06"}, "or"},
-        {{"0110011", "0x00", "0x07"}, "and"},
+        {{"0110011", "000", "0000000"}, "add"},
+        {{"0110011", "000", "0100000"}, "sub"},
+        {{"0110011", "001", "0000000"}, "sll"},
+        {{"0110011", "010", "0000000"}, "slt"},
+        {{"0110011", "011", "0000000"}, "sltu"},
+        {{"0110011", "100", "0000000"}, "xor"},
+        {{"0110011", "101", "0000000"}, "srl"},
+        {{"0110011", "101", "0100000"}, "sra"},
+        {{"0110011", "110", "0000000"}, "or"},
+        {{"0110011", "111", "0000000"}, "and"},
 
-        {{"0010011", "0x00", "0x00"}, "addi"},
-        {{"0010011", "0x00", "0x02"}, "slti"},
-        {{"0010011", "0x00", "0x03"}, "sltiu"},
-        {{"0010011", "0x00", "0x04"}, "xori"},
-        {{"0010011", "0x00", "0x06"}, "ori"},
-        {{"0010011", "0x00", "0x07"}, "andi"},
-        {{"0010011", "0x00", "0x01"}, "slli"},
-        {{"0010011", "0x00", "0x05"}, "srli"},
-        {{"0010011", "0x20", "0x05"}, "srai"},
+        {{"0010011", "000", "-1"}, "addi"},
+        {{"0010011", "010", "-1"}, "slti"},
+        {{"0010011", "011", "-1"}, "sltiu"},
+        {{"0010011", "100", "-1"}, "xori"},
+        {{"0010011", "110", "-1"}, "ori"},
+        {{"0010011", "111", "-1"}, "andi"},
+        {{"0010011", "001", "0000000"}, "slli"},
+        {{"0010011", "101", "0000000"}, "srli"},
+        {{"0010011", "101", "0100000"}, "srai"},
 
-        {{"1100011", "0x00", "0x00"}, "beq"},
-        {{"1100011", "0x00", "0x01"}, "bne"},
-        {{"1100011", "0x00", "0x04"}, "blt"},
-        {{"1100011", "0x00", "0x05"}, "bge"},
-        {{"1100011", "0x00", "0x06"}, "bltu"},
-        {{"1100011", "0x00", "0x07"}, "bgeu"},
+        {{"1100011", "000", "-1"}, "beq"},
+        {{"1100011", "001", "-1"}, "bne"},
+        {{"1100011", "100", "-1"}, "blt"},
+        {{"1100011", "101", "-1"}, "bge"},
+        {{"1100011", "110", "-1"}, "bltu"},
+        {{"1100011", "111", "-1"}, "bgeu"},
 
-        {{"0000011", "0x00", "0x00"}, "lb"},
-        {{"0000011", "0x00", "0x01"}, "lh"},
-        {{"0000011", "0x00", "0x02"}, "lw"},
-        {{"0000011", "0x00", "0x04"}, "lbu"},
-        {{"0000011", "0x00", "0x05"}, "lhu"},
+        {{"0000011", "000", "-1"}, "lb"},
+        {{"0000011", "001", "-1"}, "lh"},
+        {{"0000011", "010", "-1"}, "lw"},
+        {{"0000011", "100", "-1"}, "lbu"},
+        {{"0000011", "101", "-1"}, "lhu"},
 
-        {{"0100011", "0x00", "0x00"}, "sb"},
-        {{"0100011", "0x00", "0x01"}, "sh"},
-        {{"0100011", "0x00", "0x02"}, "sw"},
+        {{"0100011", "000", "-1"}, "sb"},
+        {{"0100011", "001", "-1"}, "sh"},
+        {{"0100011", "010", "-1"}, "sw"},
 
         {{"1101111", "-1", "-1"}, "jal"},
-        {{"1100111", "0x00", "-1"}, "jalr"},
+        {{"1100111", "000", "-1"}, "jalr"},
 
         {{"0110111", "-1", "-1"}, "lui"},
         {{"0010111", "-1", "-1"}, "auipc"},
 
         // RV32M Extension (Multiplication and Division)
-        {{"0110011", "0x00", "0x08"}, "mul"},
-        {{"0110011", "0x00", "0x09"}, "mulh"},
-        {{"0110011", "0x00", "0x0A"}, "mulhsu"},
-        {{"0110011", "0x00", "0x0B"}, "mulhu"},
-        {{"0110011", "0x00", "0x0C"}, "div"},
-        {{"0110011", "0x00", "0x0D"}, "divu"},
-        {{"0110011", "0x00", "0x0E"}, "rem"},
-        {{"0110011", "0x00", "0x0F"}, "remu"},
+        {{"0110011", "000", "0000001"}, "mul"},
+        {{"0110011", "001", "0000001"}, "mulh"},
+        {{"0110011", "010", "0000001"}, "mulhsu"},
+        {{"0110011", "011", "0000001"}, "mulhu"},
+        {{"0110011", "100", "0000001"}, "div"},
+        {{"0110011", "101", "0000001"}, "divu"},
+        {{"0110011", "110", "0000001"}, "rem"},
+        {{"0110011", "111", "0000001"}, "remu"},
 
         // System Instructions
         {{"0001111", "-1", "-1"}, "fence"},
         {{"1110011", "-1", "-1"}, "ecall"},
-        {{"1110011", "-1", "-1"}, "ebreak"}
-
+        {{"1110011", "-1", "-1"}, "ebreak"},
     };
     unordered_map<string, bool> opp_fun3 = {
-        {"0110011", false},
-        {"0010011", false},
-        {"1100011", false},
-        {"0000011", false},
-        {"0100011", false},
-        {"1101111", true},
+        {"0110011", true},
+        {"0010011", true},
+        {"1100011", true},
+        {"0000011", true},
+        {"0100011", true},
+        {"1101111", false},
         {"1100111", true},
-        {"0110111", true},
-        {"0010111", true}};
+        {"0110111", false},
+        {"0010111", false}};
+
     unordered_map<string, bool> opp_fun7 = {
         {"0110011", true},
         {"0010011", false},
@@ -167,6 +167,8 @@ public:
         while (getline(PCFile, Line))
         {
             PC_MAP[PC] = Line;
+            // cout << PC << " " << Line << endl;
+            // cout << Line << endl;
             PC += 4;
         }
         limit_pc = PC;
@@ -176,7 +178,6 @@ public:
     string Fetch(int PC)
     {
         string IS = PC_MAP[PC];
-        PC += 4;
         return IS;
     }
 
@@ -186,7 +187,7 @@ public:
         string fun3 = "-1";
         string fun7 = "-1";
         string rd = Instruction.substr(20, 5);
-        string rs1 = Instruction.substr(15, 5);
+        string rs1 = Instruction.substr(12, 5);
         string rs2 = Instruction.substr(7, 5);
 
         string immi;
@@ -196,7 +197,7 @@ public:
         }
         else if (opcode == "0100011")
         {                                                                // S-type
-            immi = Instruction.substr(0, 5) + Instruction.substr(20, 7); // imm[4:0] + imm[11:5]
+            immi = Instruction.substr(20, 5) + Instruction.substr(0, 7); // imm[4:0] + imm[11:5]
         }
         else if (opcode == "1100011")
         { // B-type
@@ -214,25 +215,27 @@ public:
         }
         else
         {
-            immi = "N/A"; // No immediate for R-type
+            immi = "000"; // No immediate for R-type
         }
-
         if (opp_fun3[opcode])
         {
-            string fun3 = Instruction.substr(17, 3);
+            fun3 = Instruction.substr(17, 3);
         }
-        if (opp_fun7[opcode])
+        if (opp_fun7[opcode] || (opcode == "0010011" && (fun3 == "001" || fun3 == "101")))
         {
-            string fun7 = Instruction.substr(0, 7);
+            fun7 = Instruction.substr(0, 7);
         }
 
         I_DATA data;
         data.i_type = opcode;
         data.opperation = operation[{opcode, fun3, fun7}];
+
         data.rd = stoi(rd, 0, 2);
         data.rs1 = stoi(rs1, 0, 2);
         data.rs2 = stoi(rs2, 0, 2);
         data.immi = stoi(immi, 0, 2);
+
+        cout << data.opperation << " " << data.immi << endl;
         return data;
     };
 
@@ -322,7 +325,10 @@ public:
             if (Register[data.rs1] == Register[data.rs2])
             {
                 PC = PC + data.immi;
+                // cout<<data.immi<<endl;
             }
+            else
+                PC = PC + 4;
         }
         else if (operation == "bne")
         {
@@ -370,6 +376,7 @@ public:
         }
         else if (operation == "lw")
         {
+
             EX = Register[data.rs1] + data.immi;
         }
         else if (operation == "lbu")
@@ -407,7 +414,7 @@ public:
 
         else if (operation == "lui")
         {
-            EX = data.immi;
+            EX = data.immi << 12;
         }
         else if (operation == "auipc")
         {
@@ -438,8 +445,13 @@ public:
 
     void memory(I_DATA data)
     {
+        // cout << EX << endl;
         if (data.i_type == "0100011")
+        {
             writeMemory(EX, Register[data.rs2]);
+            cout << EX << " " << Register[data.rs2] << endl;
+        }
+
         else if (data.i_type == "0000011")
             Register[data.rd] = readMemory(EX);
     }
@@ -464,17 +476,17 @@ public:
     Simulator(const string &filename, const string &memory_file, const string &register_file)
     {
         store_PC(filename);
+
         while (PC < limit_pc)
         {
+            Register[0] = 0;
             string IS = Fetch(PC);
             I_DATA data = decode(IS);
             execute(data);
             memory(data);
             write_back(data);
         }
-        Register[0] = 34;
-        Register[1] = 0;
-        Register[2] = 0;
+        Register[0] = 0;
         saveRegisterToFile(register_file);
         saveMemoryToFile(memory_file);
     }

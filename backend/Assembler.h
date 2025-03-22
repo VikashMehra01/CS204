@@ -553,6 +553,7 @@ public:
         // cout << "Assembly completed. Output written to " << outputFilename << endl;
         cout << "Assembly completed. Output written to " << outputFilename << endl;
         saveMemoryToFile("memory.mem");
+        outputFile.close();
         inputFile.close();
     }
 };

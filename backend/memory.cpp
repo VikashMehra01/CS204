@@ -12,7 +12,7 @@ void writeMemory(int address, int value)
 
 int readMemory(int address)
 {
-    return memory.count(address) ? memory[address] : 0;
+    return memory[address];
 }
 
 // Function to save memory data to a binary file
@@ -27,7 +27,7 @@ void saveMemoryToFile(const string &filename)
 
     for (const auto &pair : memory)
     {
-        outFile << pair.first << " " << pair.second << endl;
+        outFile << hex << pair.first << " " << pair.second << endl;
     }
 
     outFile.close();

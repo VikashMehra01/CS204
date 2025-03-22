@@ -1,6 +1,13 @@
 .data
-n: .word 89, 90, 100
+data: .word 89
 
 .text
-add x7, x8, x9
+addi x2, x0, 2
+addi x3, x0, 3
+beq x3, x2, exit
+addi x8, x8, 6
+
+exit:
+addi x9, x8, 9
+
 
