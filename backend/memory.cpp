@@ -1,0 +1,38 @@
+#include "memory.h"
+#include <iostream> // For input/output
+#include <fstream>  // For file handling
+
+using namespace std;
+map<int, int> memory; // Our global memory map
+
+void writeMemory(int address, int value)
+{
+    memory[address] = value;
+}
+
+int readMemory(int address)
+{
+    return memory.count(address) ? memory[address] : 0;
+}
+
+// Function to save memory data to a binary file
+void saveMemoryToFile(const string &filename)
+{
+    ofstream outFile(filename, ios::binary);
+    if (!outFile)
+    {
+        cerr << "Error: Could not open file for writing!\n";
+        return;
+    }
+
+    size_t size = memory.size();
+    outFile.write(reinterpret_cast<const char *>(&size), sizeof(size)); // Store map size
+
+    for (const auto &pair : memory)
+    {
+        outFile.write(reinterpret_cast<const char *>(&pair.first), sizeof(pair.first));
+        outFile.write(reinterpret_cast<const char *>(&pair.second), sizeof(pair.second));
+    }
+
+    outFile.close();
+}

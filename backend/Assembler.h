@@ -1,3 +1,6 @@
+#ifndef ASSEMBLER
+#define ASSEMBLER
+
 #include <iostream>
 #include <fstream>
 #include <unordered_map>
@@ -6,6 +9,8 @@
 #include <sstream>
 #include <bitset>
 #include <iomanip>
+
+#include "memory.h"
 
 using namespace std;
 
@@ -39,6 +44,7 @@ private:
     int HeapAddress = 0x10008000;
     int StackAddress = 0x7FFFFFDC;
     vector<string> outputLines;
+    vector<string> PCLines;
     vector<string> dataSegment;
     bool inTextSegment = true;
     string lastLabel = "";
@@ -98,6 +104,8 @@ private:
     }
     void handleDataDirective(const vector<string> &tokens, ofstream &outputFile)
     {
+        // int data = stoi(tokens[1]);
+        // int bitMask = 1 << 8;
         if (tokens.empty())
             return;
         string directive = tokens[0];
@@ -111,7 +119,21 @@ private:
         {
             if (!lastLabel.empty())
             {
+
                 dataTable.insert(lastLabel, dataAddress);
+
+                // writeMemory(dataAddress, data & bitMask);
+                // data >>= 8;
+                // dataAddress += 1;
+                // writeMemory(dataAddress, data & bitMask);
+                // data >>= 8;
+                // dataAddress += 1;
+                // writeMemory(dataAddress, data & bitMask);
+                // data >>= 8;
+                // dataAddress += 1;
+                // writeMemory(dataAddress, data & bitMask);
+                // dataAddress += 1;
+
                 lastLabel.clear();
             }
             outputFile << "0x" << hex << dataAddress << " ";
@@ -120,10 +142,12 @@ private:
                 int value = stoi(tokens[i]);
                 for (int j = 0; j < 4; j++)
                 {
-                    dataSegment.push_back(to_string((value >> (j * 8)) & 0xFF));
+                    // dataSegment.push_back(to_string((value >> (j * 8)) & 0xFF));
+                    writeMemory(dataAddress++, (value >> (j * 8)) & 0xFF);
+                    outputFile << "0x" << hex << ((value >> (j * 8)) & 0xFF) << " ";
                 }
-                outputFile << "0x" << hex << ((value) & 0xFF) << " ";
-                dataAddress += 4;
+
+                // dataAddress += 4;
             }
             outputFile << endl;
         }
@@ -132,6 +156,29 @@ private:
             if (!lastLabel.empty())
             {
                 dataTable.insert(lastLabel, dataAddress);
+                // writeMemory(dataAddress, data & bitMask);
+                // data >>= 8;
+                // dataAddress += 1;
+                // writeMemory(dataAddress, data & bitMask);
+                // data >>= 8;
+                // dataAddress += 1;
+                // writeMemory(dataAddress, data & bitMask);
+                // data >>= 8;
+                // dataAddress += 1;
+                // writeMemory(dataAddress, data & bitMask);
+                // data >>= 8;
+                // dataAddress += 1;
+                // writeMemory(dataAddress, data & bitMask);
+                // data >>= 8;
+                // dataAddress += 1;
+                // writeMemory(dataAddress, data & bitMask);
+                // data >>= 8;
+                // dataAddress += 1;
+                // writeMemory(dataAddress, data & bitMask);
+                // data >>= 8;
+                // dataAddress += 1;
+                // writeMemory(dataAddress, data & bitMask);
+                // dataAddress += 1;
                 lastLabel.clear();
             }
             for (size_t i = 1; i < tokens.size(); i++)
@@ -140,10 +187,11 @@ private:
                 outputFile << "0x" << hex << dataAddress << " ";
                 for (int j = 0; j < 8; j++)
                 {
-                    dataSegment.push_back(to_string((value >> (j * 8)) & 0xFF));
+                    // dataSegment.push_back(to_string((value >> (j * 8)) & 0xFF));
+                    writeMemory(dataAddress++, (value >> (j * 8)) & 0xFF);
                     outputFile << "0x" << hex << ((value >> (j * 8)) & 0xFF) << " ";
                 }
-                dataAddress += 8;
+                // dataAddress += 8;
             }
             outputFile << endl;
         }
@@ -152,15 +200,17 @@ private:
             if (!lastLabel.empty())
             {
                 dataTable.insert(lastLabel, dataAddress);
+                // writeMemory(dataAddress, stoi(tokens[1]));
                 lastLabel.clear();
             }
             outputFile << "0x" << hex << dataAddress << " ";
             for (size_t i = 1; i < tokens.size(); i++)
             {
                 int value = stoi(tokens[i]);
-                dataSegment.push_back(to_string(value & 0xFF));
+                // dataSegment.push_back(to_string(value & 0xFF));
+                writeMemory(dataAddress++, value & 0xFF);
                 outputFile << "0x" << hex << (value & 0xFF) << " ";
-                dataAddress += 1;
+                // dataAddress += 1;
             }
             outputFile << endl;
         }
@@ -169,6 +219,7 @@ private:
             if (!lastLabel.empty())
             {
                 dataTable.insert(lastLabel, dataAddress);
+                // writeMemory(dataAddress, stoi(tokens[1]));
                 lastLabel.clear();
             }
             outputFile << "0x" << hex << dataAddress << " ";
@@ -177,10 +228,11 @@ private:
                 int value = stoi(tokens[i]);
                 for (int j = 0; j < 2; j++)
                 {
-                    dataSegment.push_back(to_string((value >> (j * 8)) & 0xFF));
+                    // dataSegment.push_back(to_string((value >> (j * 8)) & 0xFF));
+                    writeMemory(dataAddress++, (value >> (j * 8)) & 0xFF);
                     outputFile << "0x" << hex << ((value >> (j * 8)) & 0xFF) << " ";
                 }
-                dataAddress += 2;
+                // dataAddress += 2;
             }
             outputFile << endl;
         }
@@ -190,17 +242,25 @@ private:
             if (!lastLabel.empty())
             {
                 dataTable.insert(lastLabel, dataAddress);
-                lastLabel.clear();
+                // for (char c : str)
+                // {
+                //     writeMemory(dataAddress++, c);
+                //     // dataAddress += 1;
+                // }
+                // writeMemory(dataAddress++, '\0');
+                // lastLabel.clear();
             }
             outputFile << "0x" << hex << dataAddress << " ";
             for (char c : str)
             {
-                dataSegment.push_back(string(1, c));
+                // dataSegment.push_back(string(1, c));
+                writeMemory(dataAddress, c);
                 outputFile << c << " ";
                 dataAddress += 1;
             }
             outputFile << endl;
-            dataSegment.push_back("\0"); // Null terminator
+            // dataSegment.push_back("\0"); // Null terminator
+            writeMemory(dataAddress, '\0');
             dataAddress += 1;
         }
         else
@@ -236,18 +296,21 @@ private:
         }
         else if (instructionType[instr] == "I")
         {
-            string rd,rs1,rs2;
+            string rd, rs1, rs2;
             // cout<<"here"<<endl;
-            if(tokens.size()<4){
-                rd=tokens[1];
-                size_t pos=tokens[2].find('(');
-                rs2=tokens[2].substr(0,pos);
-                rs1=tokens[2].substr(pos+1,tokens[2].size()-pos-2); 
+            if (tokens.size() < 4)
+            {
+                rd = tokens[1];
+                size_t pos = tokens[2].find('(');
+                rs2 = tokens[2].substr(0, pos);
+                rs1 = tokens[2].substr(pos + 1, tokens[2].size() - pos - 2);
                 // cout<<pos<<endl;
-            }else{
-                rd=tokens[1];
-                rs1=tokens[2];
-                rs2=tokens[3];
+            }
+            else
+            {
+                rd = tokens[1];
+                rs1 = tokens[2];
+                rs2 = tokens[3];
             }
             // cout<<tokens[2]<<endl;
             // cout<<tokens[2].substr(0,1)<<"rs2"<<endl;
@@ -316,7 +379,7 @@ private:
         }
         else if (instructionType[instr] == "U")
         {
-            string imm = immediateToBinary(stoi(tokens[2],nullptr,16),20);
+            string imm = immediateToBinary(stoi(tokens[2], nullptr, 16), 20);
             // cout<<imm<<endl;
             binaryEncoding = imm + registerToBinary(tokens[1]) + opcodeTable[instr];
 
@@ -329,16 +392,17 @@ private:
 
         formattedOutput << "0x" << hex << currentAddress << " " << binaryToHex(binaryEncoding) << "  " << assemblyFormat
                         << " # " << breakdown;
-
+        PCLines.push_back(binaryEncoding);
         outputLines.push_back(formattedOutput.str());
         currentAddress += 4;
     }
 
 public:
-    void assembleFile(const string &inputFilename, const string &outputFilename)
+    void assembleFile(const string &inputFilename, const string &outputFilename, const string &PC)
     {
         ifstream inputFile(inputFilename);
         ofstream outputFile(outputFilename);
+        ofstream PCfile(PC);
         string line;
 
         if (!inputFile)
@@ -357,7 +421,7 @@ public:
             istringstream iss(line);
             vector<string> tokens;
             string token;
-            
+
             while (iss >> token)
             {
                 tokens.push_back(token);
@@ -384,18 +448,24 @@ public:
                 if (inTextSegment)
                 {
                     symTable.insert(label, currentAddress);
-                    if(tokens.size()>1){
-                        currentAddress+=4;
+                    if (tokens.size() > 1)
+                    {
+                        currentAddress += 4;
                     }
-                }else
+                }
+                else
                 {
                     lastLabel = label;
                     handleDataDirective(vector<string>(tokens.begin() + 1, tokens.end()), outputFile);
                 }
-            }else{
-                if(inTextSegment){
+            }
+            else
+            {
+                if (inTextSegment)
+                {
                     currentAddress += 4;
-                }else
+                }
+                else
                 {
                     if (lastLabel.empty())
                     {
@@ -404,22 +474,21 @@ public:
                     }
                     handleDataDirective(tokens, outputFile);
                 }
-                
             }
         }
         inputFile.close();
 
-
-        //second Pass
+        // second Pass
         inputFile.open(inputFilename);
         currentAddress = 0x00000000;
 
-        if (!inputFile) {
+        if (!inputFile)
+        {
             cerr << "Error reopening input file!" << endl;
             return;
         }
-        
-        inTextSegment=true;
+
+        inTextSegment = true;
         while (getline(inputFile, line))
         {
             size_t commentPos = line.find('#');
@@ -460,10 +529,13 @@ public:
             {
                 if (inTextSegment)
                 {
-                    encodeInstruction(vector<string>(tokens.begin()+1,tokens.end()));
-                }    
-            }else{
-                if(inTextSegment){
+                    encodeInstruction(vector<string>(tokens.begin() + 1, tokens.end()));
+                }
+            }
+            else
+            {
+                if (inTextSegment)
+                {
                     encodeInstruction(tokens);
                 }
             }
@@ -473,14 +545,21 @@ public:
         {
             outputFile << output << endl;
         }
+        for (const auto &P : PCLines)
+        {
+            PCfile << P << endl;
+        }
         outputFile << "Vikash " << TERMINATION_CODE << "  # End of program" << endl;
         cout << "Assembly completed. Output written to " << outputFilename << endl;
+
+        inputFile.close();
     }
 };
 
-int main()
-{
-    Assembler assembler;
-    assembler.assembleFile("input.asm", "output.mc");
-    return 0;
-}
+#endif
+// int main()
+// {
+//     Assembler assembler;
+//     assembler.assembleFile("input.asm", "output.mc", "PC.pc");
+//     return 0;
+// }
