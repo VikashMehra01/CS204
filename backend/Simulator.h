@@ -472,7 +472,7 @@ public:
             memory(data);
             write_back(data);
         }
-        Register[0] = 0;
+        Register[0] = 34;
         Register[1] = 0;
         Register[2] = 0;
         saveRegisterToFile(register_file);

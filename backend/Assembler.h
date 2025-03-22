@@ -398,7 +398,7 @@ private:
     }
 
 public:
-    void assembleFile(const string &inputFilename, const string &outputFilename, const string &PC)
+    Assembler(const string &inputFilename, const string &outputFilename, const string &PC)
     {
         ifstream inputFile(inputFilename);
         ofstream outputFile(outputFilename);
@@ -550,8 +550,9 @@ public:
             PCfile << P << endl;
         }
         outputFile << "Vikash " << TERMINATION_CODE << "  # End of program" << endl;
+        // cout << "Assembly completed. Output written to " << outputFilename << endl;
         cout << "Assembly completed. Output written to " << outputFilename << endl;
-
+        saveMemoryToFile("memory.mem");
         inputFile.close();
     }
 };

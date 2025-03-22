@@ -5,9 +5,9 @@
 
 int main()
 {
-    Assembler assembler;
-    assembler.assembleFile("input.asm", "output.txt", "PC.pc");
-    Simulator simulator("PC.pc", "memory.bin", "register.reg");
+    Assembler assembler("input.asm", "output.mc", "PC.pc");
+    // assembler.assembleFile("input.asm", "output.txt", "PC.pc");
+    // Simulator simulator("PC.pc", "memory.mem", "register.reg");
     cout << "Vikash" << endl;
     return 0;
 }

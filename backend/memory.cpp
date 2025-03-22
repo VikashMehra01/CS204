@@ -18,20 +18,16 @@ int readMemory(int address)
 // Function to save memory data to a binary file
 void saveMemoryToFile(const string &filename)
 {
-    ofstream outFile(filename, ios::binary);
+    ofstream outFile(filename);
     if (!outFile)
     {
         cerr << "Error: Could not open file for writing!\n";
         return;
     }
 
-    size_t size = memory.size();
-    outFile.write(reinterpret_cast<const char *>(&size), sizeof(size)); // Store map size
-
     for (const auto &pair : memory)
     {
-        outFile.write(reinterpret_cast<const char *>(&pair.first), sizeof(pair.first));
-        outFile.write(reinterpret_cast<const char *>(&pair.second), sizeof(pair.second));
+        outFile << pair.first << " " << pair.second << endl;
     }
 
     outFile.close();
