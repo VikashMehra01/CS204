@@ -437,6 +437,7 @@ public:
         }
         else if (operation == "mul")
         {
+            cout << Register[data.rs1] << " " << Register[data.rs2] << endl;
             EX = Register[data.rs1] * Register[data.rs2];
         }
         else if (operation == "div")
@@ -556,13 +557,45 @@ public:
             string IS = Fetch(PC);
             outFile << "Fetch   :" << IS << " " << PC << endl;
             I_DATA data = decode(IS);
-            outFile << "Decode  :" << data.opperation << " " << data.rd << " " << data.rs1 << " " << data.rs2 << " " << data.immi << endl;
+            outFile << "Decode  :" << data.opperation << " ";
+            if (!(data.i_type == "0100011" || data.i_type == "1100011"))
+            {
+                outFile << "rd:" << data.rd;
+            }
+            if (!(data.i_type == "0110111" || data.i_type == "0010111" || data.i_type == "1101111"))
+            {
+                outFile << " rs1:" << data.rs1;
+            }
+            if (!(data.i_type == "0010011" || data.i_type == "0000011" || data.i_type == "1101111" || data.i_type == "0110111" || data.i_type == "0010111"))
+            {
+                outFile << " rs2:" << data.rs2;
+            }
+            if (!(data.i_type == "0110011"))
+            {
+                outFile << " imm:" << data.immi;
+            }
+            outFile << endl;
             execute(data);
             outFile << "Execute :" << EX << endl;
             memory(data);
-            outFile << "Memory  :" << Register[data.rd] << endl;
+            if (data.i_type == "0000011" || data.i_type == "0100011")
+            {
+                outFile << "Memory  :" << Register[data.rd] << endl;
+            }
+            else
+            {
+                outFile << "Memory  :" << "Not used" << endl;
+            }
+
             write_back(data);
-            outFile << "Write   :" << Register[data.rd] << endl;
+            if (data.i_type == "0100011" || data.i_type == "1100011")
+            {
+                outFile << "WriteBack   :" << "Not used" << endl;
+            }
+            else
+            {
+                outFile << "WriteBack   :" << Register[data.rd] << endl;
+            }
             outFile << "------------------------------------------------------------------------------------" << endl;
         }
         Register[0] = 0;
