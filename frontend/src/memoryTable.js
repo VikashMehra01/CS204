@@ -98,7 +98,7 @@ function RegisterTable() {
                   width: "30%",
                 }}
               >
-                Register
+                Address
               </th>
               <th
                 style={{
@@ -107,7 +107,7 @@ function RegisterTable() {
                   width: "70%",
                 }}
               >
-                Value
+                Data
               </th>
             </tr>
           </thead>

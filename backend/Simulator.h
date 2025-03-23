@@ -544,20 +544,30 @@ public:
         outFile.close();
     }
 
-    Simulator(const string &filename, const string &memory_file, const string &register_file)
+    Simulator(const string &filename, const string &outputFile, const string &memory_file, const string &register_file)
     {
         store_PC(filename);
-
+        ofstream outFile(outputFile);
+        int cycles = 0;
         while (PC < limit_pc)
         {
+            cycles++;
             Register[0] = 0;
             string IS = Fetch(PC);
+            outFile << "Fetch   :" << IS << " " << PC << endl;
             I_DATA data = decode(IS);
+            outFile << "Decode  :" << data.opperation << " " << data.rd << " " << data.rs1 << " " << data.rs2 << " " << data.immi << endl;
             execute(data);
+            outFile << "Execute :" << EX << endl;
             memory(data);
+            outFile << "Memory  :" << Register[data.rd] << endl;
             write_back(data);
+            outFile << "Write   :" << Register[data.rd] << endl;
+            outFile << "------------------------------------------------------------------------------------" << endl;
         }
         Register[0] = 0;
+        outFile << "Cycles: " << cycles << endl;
+        outFile.close();
         saveRegisterToFile(register_file);
         saveMemoryToFile(memory_file);
         cout << "Simulation Completed" << endl;

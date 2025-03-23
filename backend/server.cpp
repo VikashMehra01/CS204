@@ -45,10 +45,10 @@ void handleAssemblyRequest(const Request &req, Response &res)
     outFile.close();
 
     // Run the assembler (which generates 'output.mc' machine code file)
-    system("./main input.asm output.mc memory.mem register.reg PC.pc");
+    system("./main input.asm output.mc FinalOutput.txt memory.mem register.reg PC.pc");
 
     // Read the machine code output file
-    ifstream inFile("output.mc");
+    ifstream inFile("FinalOutput.txt");
     if (!inFile)
     {
         cerr << "Error: Could not open output.mc file!" << endl;

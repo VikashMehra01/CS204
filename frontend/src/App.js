@@ -7,7 +7,7 @@ export default function App() {
   const [assemblyCode, setAssemblyCode] = useState("");
   const [machineCode, setMachineCode] = useState("");
   const [activeTab, setActiveTab] = useState("input");
-
+  console.log("Powered by Vikash Mehra");
   const handleConvert = async () => {
     try {
       const response = await fetch("http://localhost:3001/assemble", {
