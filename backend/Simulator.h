@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <string>
 #include <vector>
+#include <cmath>
 
 #include "memory.h"
 
@@ -43,10 +44,10 @@ private:
     int limit_pc;
     unordered_map<int, string> PC_MAP;
     // unordered_map<int, int> Memory;
-    unordered_map<int, int> Register{
+    unordered_map<int, long long int> Register{
         {0, 0},
         {1, 0},
-        {2, 0},
+        {2, 2147483612},
         {3, 0},
         {4, 0},
         {5, 0},
@@ -167,8 +168,6 @@ public:
         while (getline(PCFile, Line))
         {
             PC_MAP[PC] = Line;
-            // cout << PC << " " << Line << endl;
-            // cout << Line << endl;
             PC += 4;
         }
         limit_pc = PC;
@@ -197,7 +196,7 @@ public:
         }
         else if (opcode == "0100011")
         {                                                                // S-type
-            immi = Instruction.substr(20, 5) + Instruction.substr(0, 7); // imm[4:0] + imm[11:5]
+            immi = Instruction.substr(0, 7) + Instruction.substr(20, 5); // imxm[4:0] + imm[11:5]
         }
         else if (opcode == "1100011")
         { // B-type
@@ -233,9 +232,17 @@ public:
         data.rd = stoi(rd, 0, 2);
         data.rs1 = stoi(rs1, 0, 2);
         data.rs2 = stoi(rs2, 0, 2);
-        data.immi = stoi(immi, 0, 2);
+        int temp_immi = stoi(immi, 0, 2);
+        int bits = immi.size();
+        if (temp_immi & (1 << (bits - 1)))
+        {
+            data.immi = temp_immi - (1 << bits);
+        }
+        else
+        {
+            data.immi = temp_immi;
+        }
 
-        cout << data.opperation << " " << data.immi << endl;
         return data;
     };
 
@@ -325,7 +332,6 @@ public:
             if (Register[data.rs1] == Register[data.rs2])
             {
                 PC = PC + data.immi;
-                // cout<<data.immi<<endl;
             }
             else
                 PC = PC + 4;
@@ -336,6 +342,8 @@ public:
             {
                 PC = PC + data.immi;
             }
+            else
+                PC += 4;
         }
         else if (operation == "blt")
         {
@@ -343,6 +351,8 @@ public:
             {
                 PC = PC + data.immi;
             }
+            else
+                PC += 4;
         }
         else if (operation == "bge")
         {
@@ -350,6 +360,8 @@ public:
             {
                 PC = PC + data.immi;
             }
+            else
+                PC += 4;
         }
         else if (operation == "bltu")
         {
@@ -357,6 +369,8 @@ public:
             {
                 PC = PC + data.immi;
             }
+            else
+                PC += 4;
         }
         else if (operation == "bgeu")
         {
@@ -364,6 +378,8 @@ public:
             {
                 PC = PC + data.immi;
             }
+            else
+                PC += 4;
         }
         // store instruction
         else if (operation == "lb")
@@ -376,7 +392,6 @@ public:
         }
         else if (operation == "lw")
         {
-
             EX = Register[data.rs1] + data.immi;
         }
         else if (operation == "lbu")
@@ -445,15 +460,71 @@ public:
 
     void memory(I_DATA data)
     {
-        // cout << EX << endl;
         if (data.i_type == "0100011")
         {
-            writeMemory(EX, Register[data.rs2]);
-            cout << EX << " " << Register[data.rs2] << endl;
+            int val = Register[data.rs2];
+            string curr = data.opperation;
+
+            if (curr == "sb")
+            {
+                writeMemory(EX, val % (1 << 8));
+            }
+            else if (curr == "sh")
+            {
+                writeMemory(EX, val % 256);
+                val >>= 8;
+                writeMemory(EX + 1, val % 256);
+            }
+            else
+            {
+                writeMemory(EX, val % 256);
+                val >>= 8;
+                writeMemory(EX + 1, val % 256);
+                val >>= 8;
+                writeMemory(EX + 2, val % 256);
+                val >>= 8;
+                writeMemory(EX + 3, val % 256);
+            }
         }
 
         else if (data.i_type == "0000011")
-            Register[data.rd] = readMemory(EX);
+        {
+
+            string curr = data.opperation;
+            if (curr == "lb")
+            {
+                int d = readMemory(EX);
+                if (d & (1 << 7))
+                {
+                    Register[data.rd] = d - (1 << 8);
+                }
+                else
+                {
+                    Register[data.rd] = d;
+                }
+            }
+
+            else if (curr == "lw")
+            {
+                int d = (readMemory(EX + 3) << 24) + (readMemory(EX + 2) << 16) + (readMemory(EX + 1) << 8) + readMemory(EX);
+                if (d & (1 << 31))
+                {
+                    Register[data.rd] = d - (1 << 32);
+                }
+                else
+                {
+                    Register[data.rd] = d;
+                }
+            }
+            else if (curr == "lbu")
+            {
+                Register[data.rd] = readMemory(EX);
+            }
+            else if (curr == "lhu")
+            {
+                Register[data.rd] = readMemory(EX) + (readMemory(EX + 1) << 8);
+            }
+        }
     }
 
     void saveRegisterToFile(const string &filename)
@@ -489,12 +560,8 @@ public:
         Register[0] = 0;
         saveRegisterToFile(register_file);
         saveMemoryToFile(memory_file);
+        cout << "Simulation Completed" << endl;
     }
 };
 
 #endif
-// int main()
-// {
-//     Simulator simulator("PC.pc");
-//     return 0;
-// }

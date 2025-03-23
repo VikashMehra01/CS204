@@ -27,8 +27,7 @@ void saveMemoryToFile(const string &filename)
 
     for (const auto &pair : memory)
     {
-        outFile << hex << pair.first << " " << pair.second << endl;
+        outFile << "0x" << hex << pair.first << " " << pair.second << endl;
     }
-
     outFile.close();
 }
