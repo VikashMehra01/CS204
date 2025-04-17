@@ -230,8 +230,8 @@ public:
         data.opperation = operation[{opcode, fun3, fun7}];
 
         data.rd = stoi(rd, 0, 2);
-        data.rs1 = stoi(rs1, 0, 2);
-        data.rs2 = stoi(rs2, 0, 2);
+        data.rs1 = Register[stoi(rs1, 0, 2)];
+        data.rs2 = Register[stoi(rs2, 0, 2)];
         int temp_immi = stoi(immi, 0, 2);
         int bits = immi.size();
         if (temp_immi & (1 << (bits - 1)))
@@ -251,85 +251,85 @@ public:
         string operation = data.opperation;
         if (operation == "add")
         {
-            EX = Register[data.rs1] + Register[data.rs2];
+            EX = data.rs1 + data.rs2;
         }
         else if (operation == "sub")
         {
-            EX = Register[data.rs1] - Register[data.rs2];
+            EX = data.rs1 - data.rs2;
         }
         else if (operation == "sll")
         {
-            EX = Register[data.rs1] << Register[data.rs2];
+            EX = data.rs1 << data.rs2;
         }
         else if (operation == "slt")
         {
-            EX = Register[data.rs1] < Register[data.rs2];
+            EX = data.rs1 < data.rs2;
         }
         else if (operation == "sltu")
         {
-            EX = (unsigned int)Register[data.rs1] < (unsigned int)Register[data.rs2] ? 1 : 0;
+            EX = (unsigned int)data.rs1 < (unsigned int)data.rs2 ? 1 : 0;
         }
         else if (operation == "xor")
         {
-            EX = Register[data.rs1] ^ Register[data.rs2];
+            EX = data.rs1 ^ data.rs2;
         }
         else if (operation == "srl")
         {
-            EX = Register[data.rs1] >> Register[data.rs2];
+            EX = data.rs1 >> data.rs2;
         }
         else if (operation == "sra")
         {
-            EX = Register[data.rs1] >> Register[data.rs2];
+            EX = data.rs1 >> data.rs2;
         }
         else if (operation == "or")
         {
-            EX = Register[data.rs1] | Register[data.rs2];
+            EX = data.rs1 | data.rs2;
         }
         else if (operation == "and")
         {
-            EX = Register[data.rs1] & Register[data.rs2];
+            EX = data.rs1 & data.rs2;
         }
         else if (operation == "addi")
         {
-            EX = Register[data.rs1] + data.immi;
+            EX = data.rs1 + data.immi;
         }
         else if (operation == "slti")
         {
-            EX = Register[data.rs1] < data.immi;
+            EX = data.rs1 < data.immi;
         }
         else if (operation == "sltiu")
         {
-            EX = (unsigned int)Register[data.rs1] < (unsigned int)data.immi;
+            EX = (unsigned int)data.rs1 < (unsigned int)data.immi;
         }
         else if (operation == "xori")
         {
-            EX = Register[data.rs1] ^ data.immi;
+            EX = data.rs1 ^ data.immi;
         }
         else if (operation == "ori")
         {
-            EX = Register[data.rs1] | data.immi;
+            EX = data.rs1 | data.immi;
         }
         else if (operation == "andi")
         {
-            EX = Register[data.rs1] & data.immi;
+            EX = data.rs1 & data.immi;
         }
         else if (operation == "slli")
         {
-            EX = Register[data.rs1] << data.immi;
+            EX = data.rs1 << data.immi;
         }
         else if (operation == "srli")
         {
-            EX = Register[data.rs1] >> data.immi;
+            EX = data.rs1 >> data.immi;
         }
         else if (operation == "srai")
         {
-            EX = Register[data.rs1] >> data.immi;
+            EX = data.rs1 >> data.immi;
         }
         // Branch instruction
         else if (operation == "beq")
         {
 
-            if (Register[data.rs1] == Register[data.rs2])
+            if (data.rs1 == data.rs2)
             {
                 PC = PC + data.immi;
             }
@@ -338,7 +338,7 @@ public:
         }
         else if (operation == "bne")
         {
-            if (Register[data.rs1] != Register[data.rs2])
+            if (data.rs1 != data.rs2)
             {
                 PC = PC + data.immi;
             }
@@ -347,7 +347,7 @@ public:
         }
         else if (operation == "blt")
         {
-            if (Register[data.rs1] < Register[data.rs2])
+            if (data.rs1 < data.rs2)
             {
                 PC = PC + data.immi;
             }
@@ -356,7 +356,7 @@ public:
         }
         else if (operation == "bge")
         {
-            if (Register[data.rs1] >= Register[data.rs2])
+            if (data.rs1 >= data.rs2)
             {
                 PC = PC + data.immi;
             }
@@ -365,7 +365,7 @@ public:
         }
         else if (operation == "bltu")
         {
-            if (Register[data.rs1] < Register[data.rs2])
+            if (data.rs1 < data.rs2)
             {
                 PC = PC + data.immi;
             }
@@ -374,7 +374,7 @@ public:
         }
         else if (operation == "bgeu")
         {
-            if (Register[data.rs1] >= Register[data.rs2])
+            if (data.rs1 >= data.rs2)
             {
                 PC = PC + data.immi;
             }
@@ -384,35 +384,35 @@ public:
         // store instruction
         else if (operation == "lb")
         {
-            EX = Register[data.rs1] + data.immi;
+            EX = data.rs1 + data.immi;
         }
         else if (operation == "lh")
         {
-            EX = Register[data.rs1] + data.immi;
+            EX = data.rs1 + data.immi;
         }
         else if (operation == "lw")
         {
-            EX = Register[data.rs1] + data.immi;
+            EX = data.rs1 + data.immi;
         }
         else if (operation == "lbu")
         {
-            EX = Register[data.rs1] + data.immi;
+            EX = data.rs1 + data.immi;
         }
         else if (operation == "lhu")
         {
-            EX = Register[data.rs1] + data.immi;
+            EX = data.rs1 + data.immi;
         }
         else if (operation == "sb")
         {
-            EX = Register[data.rs1] + data.immi;
+            EX = data.rs1 + data.immi;
         }
         else if (operation == "sh")
         {
-            EX = Register[data.rs1] + data.immi;
+            EX = data.rs1 + data.immi;
         }
         else if (operation == "sw")
         {
-            EX = Register[data.rs1] + data.immi;
+            EX = data.rs1 + data.immi;
         }
 
         // differnt
@@ -424,7 +424,7 @@ public:
         else if (operation == "jalr")
         {
             EX = PC + 4;
-            PC = Register[data.rs1] + data.immi;
+            PC = data.rs1 + data.immi;
         }
 
         else if (operation == "lui")
@@ -437,12 +437,12 @@ public:
         }
         else if (operation == "mul")
         {
-            cout << Register[data.rs1] << " " << Register[data.rs2] << endl;
-            EX = Register[data.rs1] * Register[data.rs2];
+            cout << data.rs1 << " " << data.rs2 << endl;
+            EX = data.rs1 * data.rs2;
         }
         else if (operation == "div")
         {
-            EX = Register[data.rs1] / Register[data.rs2];
+            EX = data.rs1 / data.rs2;
         }
 
         if (data.i_type != "1100011" && data.opperation != "jal" && data.opperation != "jalr")
@@ -463,7 +463,7 @@ public:
     {
         if (data.i_type == "0100011")
         {
-            int val = Register[data.rs2];
+            int val = data.rs2;
             string curr = data.opperation;
 
             if (curr == "sb")
@@ -510,7 +510,7 @@ public:
                 int d = (readMemory(EX + 3) << 24) + (readMemory(EX + 2) << 16) + (readMemory(EX + 1) << 8) + readMemory(EX);
                 if (d & (1 << 31))
                 {
-                    Register[data.rd] = d - (1 << 32);
+                    Register[data.rd] = d - (1LL << 32);
                 }
                 else
                 {
