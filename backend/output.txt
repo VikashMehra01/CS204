@@ -1,0 +1,5 @@
+Fetch   :0x10000000 # Data segment start 4
+Decode  : rd:913600320 rs1:24494 rs2:913600320 imm:24494
+Execute :913599648
+Memory  :Not used
+Fetch   :0x0 # Text segment start 8

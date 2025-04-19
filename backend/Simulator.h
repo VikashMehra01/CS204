@@ -12,6 +12,13 @@
 
 using namespace std;
 
+struct IF_ID
+{
+    string IR = "";
+    int PC = 0;
+    bool null = true;
+};
+
 struct I_DATA
 {
     string i_type;
@@ -19,7 +26,35 @@ struct I_DATA
     int rd;
     int rs1;
     int rs2;
+    int rs1_reg;
+    int rs2_reg;
     int immi;
+    int PC;
+    bool null = true;
+};
+
+struct EX_DATA
+{
+    int EX;
+    int rd;
+    int rs1;
+    int rs2;
+    int immi;
+    int PC;
+    string i_type;
+    string opperation;
+    bool null = true;
+};
+
+struct MEMORY_DATA
+{
+    int EX = 0;
+    int rd;
+    int address;
+    int data;
+    int PC;
+    string i_type;
+    bool null = true;
 };
 
 struct vector_hash
@@ -40,8 +75,17 @@ class Simulator
 private:
     /* data */
     int PC = 0x0;
-    int EX;
+    bool DataForwarding = false;
+    bool isBranch = false;
+    int stalls = 0;
+    bool stall_installed = false;
     int limit_pc;
+
+    I_DATA Data;
+    MEMORY_DATA MEM;
+    EX_DATA EX;
+    IF_ID IR;
+
     unordered_map<int, string> PC_MAP;
     // unordered_map<int, int> Memory;
     unordered_map<int, long long int> Register{
@@ -159,8 +203,78 @@ private:
         {"1100111", false},
         {"0110111", false},
         {"0010111", false}};
+    unordered_map<string, bool> is_rs2 = {
+        {"0110011", true},  // R-type
+        {"0010011", false}, // I-type
+        {"1100011", true},  // B-type
+        {"0000011", false}, // I-type
+        {"0100011", true},  // S-type
+        {"1101111", false}, // J-type
+        {"1100111", false}, // I-type
+        {"0110111", false}, // U-type
+        {"0010111", false}  // U-type
+    };
+
+    unordered_map<string, bool> is_rs1 = {
+        {"0110011", true},
+        {"0010011", true},
+        {"1100011", true},
+        {"0000011", true},
+        {"0100011", true},
+        {"1101111", false},
+        {"1100111", true},
+        {"0110111", false},
+        {"0010111", false}};
 
 public:
+    void dataHazards(I_DATA &current)
+    {
+        int stallneeded = 0;
+        if (!DataForwarding)
+        {
+            // Original stall logic (no forwarding)
+            if (current.rs1_reg != 0)
+            {
+                if ((!Data.null && current.rs1_reg == Data.rd) ||
+                    (!EX.null && current.rs1_reg == EX.rd) ||
+                    (!MEM.null && current.rs1_reg == MEM.rd))
+                {
+                    stall_installed = true;
+                    stallneeded = 3;
+                }
+            }
+            if (current.rs2_reg != 0 && is_rs2[current.i_type])
+            {
+                if ((!Data.null && current.rs2_reg == Data.rd) ||
+                    (!EX.null && current.rs2_reg == EX.rd) ||
+                    (!MEM.null && current.rs2_reg == MEM.rd))
+                {
+                    stallneeded = std::max(stallneeded, 3);
+                    stall_installed = true;
+                }
+            }
+        }
+        else
+        {
+            // Forwarding-enabled logic: Stall only for load-use hazards
+            if (current.rs1_reg != 0)
+            {
+                if (!EX.null && EX.rd == current.rs1_reg && EX.i_type == "0000011")
+                {
+                    // Load-use hazard: EX stage is a load, result not ready yet
+                    stallneeded = 1;
+                }
+            }
+            if (current.rs2_reg != 0 && is_rs2[current.i_type])
+            {
+                if (!EX.null && EX.rd == current.rs2_reg && EX.i_type == "0000011")
+                {
+                    stallneeded = std::max(stallneeded, 1);
+                }
+            }
+        }
+        stalls = stallneeded;
+    }
     void store_PC(const string &filename)
     {
         string Line;
@@ -174,14 +288,30 @@ public:
         PC = 0x0;
     }
 
-    string Fetch(int PC)
+    IF_ID Fetch()
     {
-        string IS = PC_MAP[PC];
-        return IS;
+        IF_ID IR;
+        if (PC >= limit_pc)
+        {
+            return IR;
+        }
+
+        IR.IR = PC_MAP[PC];
+        IR.PC = PC;
+        IR.null = false;
+        PC += 4;
+        return IR;
     }
 
-    I_DATA decode(string Instruction)
+    I_DATA decode(IF_ID IR)
     {
+        string Instruction = IR.IR;
+        I_DATA data;
+        if (IR.null)
+        {
+            return data;
+        }
+
         string opcode = Instruction.substr(25, 7);
         string fun3 = "-1";
         string fun7 = "-1";
@@ -225,11 +355,12 @@ public:
             fun7 = Instruction.substr(0, 7);
         }
 
-        I_DATA data;
         data.i_type = opcode;
         data.opperation = operation[{opcode, fun3, fun7}];
 
         data.rd = stoi(rd, 0, 2);
+        data.rs1_reg = stoi(rs1, 0, 2);
+        data.rs2_reg = stoi(rs2, 0, 2);
         data.rs1 = Register[stoi(rs1, 0, 2)];
         data.rs2 = Register[stoi(rs2, 0, 2)];
         int temp_immi = stoi(immi, 0, 2);
@@ -242,88 +373,101 @@ public:
         {
             data.immi = temp_immi;
         }
+        data.null = false;
+        data.PC = IR.PC;
+
+        dataHazards(data);
 
         return data;
-    };
+    }
 
-    void execute(I_DATA data)
+    EX_DATA execute(I_DATA data)
     {
+        EX_DATA EX_data;
+        if (data.null)
+        {
+            return EX_data;
+        }
+
         string operation = data.opperation;
         if (operation == "add")
         {
-            EX = data.rs1 + data.rs2;
+            EX_data.EX = data.rs1 + data.rs2;
         }
         else if (operation == "sub")
         {
-            EX = data.rs1 - data.rs2;
+            EX_data.EX = data.rs1 - data.rs2;
         }
         else if (operation == "sll")
         {
-            EX = data.rs1 << data.rs2;
+            EX_data.EX = data.rs1 << data.rs2;
         }
         else if (operation == "slt")
         {
-            EX = data.rs1 < data.rs2;
+            EX_data.EX = data.rs1 < data.rs2;
         }
         else if (operation == "sltu")
         {
-            EX = (unsigned int)data.rs1 < (unsigned int)data.rs2 ? 1 : 0;
+            EX_data.EX = (unsigned int)data.rs1 < (unsigned int)data.rs2 ? 1 : 0;
         }
         else if (operation == "xor")
         {
-            EX = data.rs1 ^ data.rs2;
+            EX_data.EX = data.rs1 ^ data.rs2;
         }
         else if (operation == "srl")
         {
-            EX = data.rs1 >> data.rs2;
+            EX_data.EX = data.rs1 >> data.rs2;
         }
         else if (operation == "sra")
         {
-            EX = data.rs1 >> data.rs2;
+            EX_data.EX = data.rs1 >> data.rs2;
         }
         else if (operation == "or")
         {
-            EX = data.rs1 | data.rs2;
+            EX_data.EX = data.rs1 | data.rs2;
         }
         else if (operation == "and")
         {
-            EX = data.rs1 & data.rs2;
+            EX_data.EX = data.rs1 & data.rs2;
         }
         else if (operation == "addi")
         {
-            EX = data.rs1 + data.immi;
+            EX_data.EX = data.rs1 + data.immi;
         }
         else if (operation == "slti")
         {
-            EX = data.rs1 < data.immi;
+            EX_data.EX = data.rs1 < data.immi;
         }
         else if (operation == "sltiu")
         {
-            EX = (unsigned int)data.rs1 < (unsigned int)data.immi;
+            EX_data.EX = (unsigned int)data.rs1 < (unsigned int)data.immi;
         }
         else if (operation == "xori")
         {
-            EX = data.rs1 ^ data.immi;
+            EX_data.EX = data.rs1 ^ data.immi;
         }
         else if (operation == "ori")
         {
-            EX = data.rs1 | data.immi;
+            EX_data.EX = data.rs1 | data.immi;
         }
         else if (operation == "andi")
         {
-            EX = data.rs1 & data.immi;
+            EX_data.EX = data.rs1 & data.immi;
         }
         else if (operation == "slli")
         {
-            EX = data.rs1 << data.immi;
+            int shift_amount = data.immi & 0x1F; // Mask lower 5 bits
+            EX_data.EX = data.rs1 << shift_amount;
         }
         else if (operation == "srli")
         {
-            EX = data.rs1 >> data.immi;
+            int shift_amount = data.immi & 0x1F;
+            EX_data.EX = (unsigned int)data.rs1 >> shift_amount; // Logical shift
         }
         else if (operation == "srai")
         {
-            EX = data.rs1 >> data.immi;
+            int shift_amount = data.immi & 0x1F;
+            EX_data.EX = data.rs1 >> shift_amount; // Arithmetic shift (C++ behavior for signed int)
         }
         // Branch instruction
         else if (operation == "beq")
@@ -331,200 +475,223 @@ public:
 
             if (data.rs1 == data.rs2)
             {
-                PC = PC + data.immi;
+                PC = data.PC + data.immi;
+                EX_data.EX = PC;
+                isBranch = true;
+                cout << PC << endl;
             }
-            else
-                PC = PC + 4;
         }
         else if (operation == "bne")
         {
             if (data.rs1 != data.rs2)
             {
-                PC = PC + data.immi;
+                PC = data.PC + data.immi;
+                EX_data.EX = PC;
+                isBranch = true;
             }
-            else
-                PC += 4;
         }
         else if (operation == "blt")
         {
             if (data.rs1 < data.rs2)
             {
-                PC = PC + data.immi;
+                PC = data.PC + data.immi;
+                EX_data.EX = PC;
+                isBranch = true;
             }
-            else
-                PC += 4;
         }
         else if (operation == "bge")
         {
             if (data.rs1 >= data.rs2)
             {
-                PC = PC + data.immi;
+                PC = data.PC + data.immi;
+                EX_data.EX = PC;
+                isBranch = true;
             }
-            else
-                PC += 4;
         }
         else if (operation == "bltu")
         {
             if (data.rs1 < data.rs2)
             {
-                PC = PC + data.immi;
+                PC = data.PC + data.immi;
+                EX_data.EX = PC;
+                isBranch = true;
             }
-            else
-                PC += 4;
         }
         else if (operation == "bgeu")
         {
             if (data.rs1 >= data.rs2)
             {
-                PC = PC + data.immi;
+                PC = data.PC + data.immi;
+                EX_data.EX = PC;
+                isBranch = true;
             }
-            else
-                PC += 4;
         }
         // store instruction
         else if (operation == "lb")
         {
-            EX = data.rs1 + data.immi;
+            EX_data.EX = data.rs1 + data.immi;
         }
         else if (operation == "lh")
         {
-            EX = data.rs1 + data.immi;
+            EX_data.EX = data.rs1 + data.immi;
         }
         else if (operation == "lw")
         {
-            EX = data.rs1 + data.immi;
+            EX_data.EX = data.rs1 + data.immi;
         }
         else if (operation == "lbu")
         {
-            EX = data.rs1 + data.immi;
+            EX_data.EX = data.rs1 + data.immi;
         }
         else if (operation == "lhu")
         {
-            EX = data.rs1 + data.immi;
+            EX_data.EX = data.rs1 + data.immi;
         }
         else if (operation == "sb")
         {
-            EX = data.rs1 + data.immi;
+            EX_data.EX = data.rs1 + data.immi;
         }
         else if (operation == "sh")
         {
-            EX = data.rs1 + data.immi;
+            EX_data.EX = data.rs1 + data.immi;
         }
         else if (operation == "sw")
         {
-            EX = data.rs1 + data.immi;
+            EX_data.EX = data.rs1 + data.immi;
         }
 
         // differnt
         else if (operation == "jal")
         {
-            EX = PC + 4;
-            PC = PC + data.immi;
+            EX_data.EX = data.PC + 4;
+            PC = data.PC + data.immi;
+            isBranch = true;
         }
         else if (operation == "jalr")
         {
-            EX = PC + 4;
+            EX_data.EX = data.PC + 4;
+            isBranch = true;
             PC = data.rs1 + data.immi;
         }
 
         else if (operation == "lui")
         {
-            EX = data.immi << 12;
+            EX_data.EX = data.immi << 12;
         }
         else if (operation == "auipc")
         {
-            EX = PC + data.immi;
+            EX_data.EX = data.PC + (data.immi << 12);
         }
         else if (operation == "mul")
         {
-            cout << data.rs1 << " " << data.rs2 << endl;
-            EX = data.rs1 * data.rs2;
+            EX_data.EX = data.rs1 * data.rs2;
         }
         else if (operation == "div")
         {
-            EX = data.rs1 / data.rs2;
+            EX_data.EX = data.rs1 / data.rs2;
         }
 
-        if (data.i_type != "1100011" && data.opperation != "jal" && data.opperation != "jalr")
-        {
-            PC += 4;
-        }
+        EX_data.rd = data.rd;
+        EX_data.opperation = operation;
+        EX_data.rs1 = data.rs1;
+        EX_data.rs2 = data.rs2;
+        EX_data.immi = data.immi;
+        EX_data.i_type = data.i_type;
+        EX_data.null = false;
+        EX_data.PC = data.PC;
+        return EX_data;
     }
 
-    void write_back(I_DATA data)
+    MEMORY_DATA memory(EX_DATA EX)
     {
-        if (data.i_type == "0110011" || data.i_type == "0010011" || data.i_type == "1101111" || data.i_type == "1100111" || data.i_type == "0110111" || data.i_type == "0010111")
+        MEMORY_DATA mem;
+        if (EX.null)
         {
-            Register[data.rd] = EX;
+            return mem;
         }
-    }
+        mem.EX = EX.EX;
+        mem.rd = EX.rd;
+        mem.PC = EX.PC;
+        mem.i_type = EX.i_type;
+        mem.null = false;
 
-    void memory(I_DATA data)
-    {
-        if (data.i_type == "0100011")
+        if (EX.i_type == "0100011")
         {
-            int val = data.rs2;
-            string curr = data.opperation;
+            int val = EX.rs2;
+            string curr = EX.opperation;
 
             if (curr == "sb")
             {
-                writeMemory(EX, val % (1 << 8));
+                writeMemory(EX.EX, val % (1 << 8));
             }
             else if (curr == "sh")
             {
-                writeMemory(EX, val % 256);
+                writeMemory(EX.EX, val % 256);
                 val >>= 8;
-                writeMemory(EX + 1, val % 256);
+                writeMemory(EX.EX + 1, val % 256);
             }
             else
             {
-                writeMemory(EX, val % 256);
+                writeMemory(EX.EX, val % 256);
                 val >>= 8;
-                writeMemory(EX + 1, val % 256);
+                writeMemory(EX.EX + 1, val % 256);
                 val >>= 8;
-                writeMemory(EX + 2, val % 256);
+                writeMemory(EX.EX + 2, val % 256);
                 val >>= 8;
-                writeMemory(EX + 3, val % 256);
+                writeMemory(EX.EX + 3, val % 256);
             }
         }
 
-        else if (data.i_type == "0000011")
+        else if (EX.i_type == "0000011")
         {
 
-            string curr = data.opperation;
+            string curr = EX.opperation;
             if (curr == "lb")
             {
-                int d = readMemory(EX);
+                int d = readMemory(EX.EX);
                 if (d & (1 << 7))
                 {
-                    Register[data.rd] = d - (1 << 8);
+                    Register[EX.rd] = d - (1 << 8);
                 }
                 else
                 {
-                    Register[data.rd] = d;
+                    Register[EX.rd] = d;
                 }
             }
 
             else if (curr == "lw")
             {
-                int d = (readMemory(EX + 3) << 24) + (readMemory(EX + 2) << 16) + (readMemory(EX + 1) << 8) + readMemory(EX);
+                int d = (readMemory(EX.EX + 3) << 24) + (readMemory(EX.EX + 2) << 16) + (readMemory(EX.EX + 1) << 8) + readMemory(EX.EX);
                 if (d & (1 << 31))
                 {
-                    Register[data.rd] = d - (1LL << 32);
+                    Register[EX.rd] = d - (1LL << 32);
                 }
                 else
                 {
-                    Register[data.rd] = d;
+                    Register[EX.rd] = d;
                 }
             }
             else if (curr == "lbu")
             {
-                Register[data.rd] = readMemory(EX);
+                Register[EX.rd] = readMemory(EX.EX);
             }
             else if (curr == "lhu")
             {
-                Register[data.rd] = readMemory(EX) + (readMemory(EX + 1) << 8);
+                Register[EX.rd] = readMemory(EX.EX) + (readMemory(EX.EX + 1) << 8);
             }
+        }
+        return mem;
+    }
+
+    void write_back(MEMORY_DATA MEM)
+    {
+        if (MEM.null || MEM.rd == 0)
+        {
+            return;
+        }
+        if (MEM.i_type == "0110011" || MEM.i_type == "0010011" || MEM.i_type == "1101111" || MEM.i_type == "1100111" || MEM.i_type == "0110111" || MEM.i_type == "0010111")
+        {
+            Register[MEM.rd] = MEM.EX;
         }
     }
 
@@ -539,71 +706,211 @@ public:
 
         for (const auto &pair : Register)
         {
-            outFile << pair.first << " " << pair.second << endl;
+            outFile << pair.first << " ";
+            outFile << pair.second << endl;
         }
 
         outFile.close();
     }
 
-    Simulator(const string &filename, const string &outputFile, const string &memory_file, const string &register_file)
+    // void NonPiplined(const string &filename, const string &outputFile, const string &memory_file, const string &register_file)
+    // {
+    //     store_PC(filename);
+    //     ofstream outFile(outputFile);
+    //     int cycles = 0;
+    //     while (PC < limit_pc)
+    //     {
+    //         cycles++;
+    //         string IR = Fetch();
+    //         outFile << "Fetch   :" << IR << " " << PC << endl;
+    //         I_DATA data = decode(IR);
+    //         outFile << "Decode  :" << data.opperation << " ";
+    //         if (!(data.i_type == "0100011" || data.i_type == "1100011"))
+    //         {
+    //             outFile << "rd:" << data.rd;
+    //         }
+    //         if (!(data.i_type == "0110111" || data.i_type == "0010111" || data.i_type == "1101111"))
+    //         {
+    //             outFile << " rs1:" << data.rs1;
+    //         }
+    //         if (!(data.i_type == "0010011" || data.i_type == "0000011" || data.i_type == "1101111" || data.i_type == "0110111" || data.i_type == "0010111"))
+    //         {
+    //             outFile << " rs2:" << data.rs2;
+    //         }
+    //         if (!(data.i_type == "0110011"))
+    //         {
+    //             outFile << " imm:" << data.immi;
+    //         }
+    //         outFile << endl;
+    //         execute(data);
+    //         outFile << "Execute :" << EX << endl;
+    //         memory(data);
+    //         if (data.i_type == "0000011" || data.i_type == "0100011")
+    //         {
+    //             outFile << "Memory  :" << Register[data.rd] << endl;
+    //         }
+    //         else
+    //         {
+    //             outFile << "Memory  :" << "Not used" << endl;
+    //         }
+
+    //         write_back(data);
+    //         if (data.i_type == "0100011" || data.i_type == "1100011")
+    //         {
+    //             outFile << "WriteBack   :" << "Not used" << endl;
+    //         }
+    //         else
+    //         {
+    //             outFile << "WriteBack   :" << Register[data.rd] << endl;
+    //         }
+    //         outFile << "------------------------------------------------------------------------------------" << endl;
+    //     }
+    //     outFile << "Cycles: " << cycles << endl;
+    //     outFile.close();
+    //     saveRegisterToFile(register_file);
+    //     saveMemoryToFile(memory_file);
+    //     cout << "Simulation Completed" << endl;
+    // }
+    void Pipelined(const string &filename, const string &outputFile, const string &memory_file, const string &register_file)
     {
         store_PC(filename);
         ofstream outFile(outputFile);
         int cycles = 0;
-        while (PC < limit_pc)
+        IF_ID IR_Buffer;
+        I_DATA Data_buffer;
+        EX_DATA EX_buffer;
+        MEMORY_DATA memory_buffer;
+
+        while (true)
         {
-            cycles++;
-            Register[0] = 0;
-            string IS = Fetch(PC);
-            outFile << "Fetch   :" << IS << " " << PC << endl;
-            I_DATA data = decode(IS);
-            outFile << "Decode  :" << data.opperation << " ";
-            if (!(data.i_type == "0100011" || data.i_type == "1100011"))
+            bool active_stages = false;
+            string F, D, E, M, W;
+
+            if (stalls > 0)
             {
-                outFile << "rd:" << data.rd;
-            }
-            if (!(data.i_type == "0110111" || data.i_type == "0010111" || data.i_type == "1101111"))
-            {
-                outFile << " rs1:" << data.rs1;
-            }
-            if (!(data.i_type == "0010011" || data.i_type == "0000011" || data.i_type == "1101111" || data.i_type == "0110111" || data.i_type == "0010111"))
-            {
-                outFile << " rs2:" << data.rs2;
-            }
-            if (!(data.i_type == "0110011"))
-            {
-                outFile << " imm:" << data.immi;
-            }
-            outFile << endl;
-            execute(data);
-            outFile << "Execute :" << EX << endl;
-            memory(data);
-            if (data.i_type == "0000011" || data.i_type == "0100011")
-            {
-                outFile << "Memory  :" << Register[data.rd] << endl;
-            }
-            else
-            {
-                outFile << "Memory  :" << "Not used" << endl;
+                stalls -= 1;
             }
 
-            write_back(data);
-            if (data.i_type == "0100011" || data.i_type == "1100011")
+            // WriteBack;
+            write_back(MEM);
+            if (!MEM.null)
             {
-                outFile << "WriteBack   :" << "Not used" << endl;
+                active_stages = true;
+                W = "WriteBack: " + to_string(MEM.rd) + " " + to_string(Register[MEM.rd]) + " PC:" + to_string(MEM.PC);
             }
             else
             {
-                outFile << "WriteBack   :" << Register[data.rd] << endl;
+                W = "WriteBack: Not used";
             }
+
+            memory_buffer = memory(EX);
+            // Memory
+            if (!EX.null)
+            {
+                active_stages = true;
+                M = "Memory: " + to_string(memory_buffer.EX) + " " + to_string(memory_buffer.rd) + " PC:" + to_string(memory_buffer.PC);
+            }
+            else
+            {
+                M = "Memory: Not used";
+            }
+
+            EX_buffer = execute(Data);
+            // Execute
+            if (!Data.null)
+            {
+                active_stages = true;
+                E = "Execute: " + to_string(EX_buffer.EX) + " " + to_string(EX_buffer.rd) + " PC:" + to_string(EX_buffer.PC);
+            }
+            else
+            {
+                E = "Execute: Not used";
+            }
+
+            if (stalls > 0)
+            {
+                D = "Decode: Stalls";
+                active_stages = true;
+            }
+            else
+            {
+                Data_buffer = decode(IR);
+                if (!IR.null)
+                {
+                    active_stages = true;
+                    D = "Decode :    operation :" + Data_buffer.opperation + " Rd:" + to_string(Data_buffer.rd) + " Rs1:" + to_string(Data_buffer.rs1) + " Rs2:" + to_string(Data_buffer.rs2) + " imm:" + to_string(Data_buffer.immi) + " PC:" + to_string(Data_buffer.PC);
+                }
+                else
+                {
+                    D = " Decode : Not Used";
+                }
+            }
+
+            if (stalls > 0)
+            {
+                F = "Fetch : Stalls";
+                active_stages = true;
+            }
+            else
+            {
+                IR_Buffer = Fetch();
+                if (!IR_Buffer.null)
+                {
+                    active_stages = true;
+                    F = "Fetch: " + IR_Buffer.IR + " PC:" + to_string(IR_Buffer.PC);
+                }
+                else
+                {
+                    F = "Fetch: Not Used";
+                }
+            }
+
+            if (!active_stages)
+            {
+                break;
+            }
+
+            MEM = memory_buffer;
+            memory_buffer.null = true;
+
+            EX = EX_buffer;
+            EX_buffer.null = true;
+
+            // data transfer
+            if (stalls == 0)
+            {
+                Data = Data_buffer;
+                Data_buffer.null = true;
+                IR = IR_Buffer;
+                IR_Buffer.null = true;
+            }
+            else
+            {
+                Data.null = true;
+                IR_Buffer.null = true;
+            }
+
+            if (isBranch && stalls == 0)
+            {
+                isBranch = false;
+                IR_Buffer.null = true;
+                Data.null = true;
+            }
+
+            outFile << "Cycle " << cycles++ << endl;
+            outFile << F << endl;
+            outFile << D << endl;
+            outFile << E << endl;
+            outFile << M << endl;
+            outFile << W << endl;
             outFile << "------------------------------------------------------------------------------------" << endl;
         }
-        Register[0] = 0;
-        outFile << "Cycles: " << cycles << endl;
-        outFile.close();
+
+        outFile << "Total Cycles: " << cycles << endl;
         saveRegisterToFile(register_file);
         saveMemoryToFile(memory_file);
         cout << "Simulation Completed" << endl;
+        cout << "LIMIT" << limit_pc << endl;
     }
 };
 
