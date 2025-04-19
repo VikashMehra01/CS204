@@ -28,6 +28,7 @@ struct I_DATA
     int rs2;
     int rs1_reg;
     int rs2_reg;
+    int EX;
     int immi;
     int PC;
     bool null = true;
@@ -75,11 +76,12 @@ class Simulator
 private:
     /* data */
     int PC = 0x0;
-    bool DataForwarding = false;
+    bool DataForwarding = true;
     bool isBranch = false;
     int stalls = 0;
     bool stall_installed = false;
     int limit_pc;
+    bool branch_prediction = false;
 
     I_DATA Data;
     MEMORY_DATA MEM;
@@ -233,6 +235,7 @@ public:
         if (!DataForwarding)
         {
             // Original stall logic (no forwarding)
+            stall_installed = false;
             if (current.rs1_reg != 0)
             {
                 if ((!Data.null && current.rs1_reg == Data.rd) ||
@@ -257,19 +260,60 @@ public:
         else
         {
             // Forwarding-enabled logic: Stall only for load-use hazards
-            if (current.rs1_reg != 0)
-            {
-                if (!EX.null && EX.rd == current.rs1_reg && EX.i_type == "0000011")
+            if(current.rs1_reg != 0){
+                if(!Data.null && current.rs1_reg == Data.rd)
+                {
+                    if(Data.i_type == "0000011" || (current.i_type == "1100011" && !branch_prediction))
+                    {
+                        stallneeded = 1;
+                        stall_installed = true;
+                    }
+                    else
+                    {
+                        current.rs1 = Data.EX;
+                    }
+                }
+                else if (!EX.null && EX.rd == current.rs1_reg )
                 {
                     // Load-use hazard: EX stage is a load, result not ready yet
-                    stallneeded = 1;
+                    if(EX.i_type == "0000011" || (current.i_type == "1100011" && !branch_prediction) ) 
+                    {
+                        stallneeded = 1;
+                        stall_installed = true;
+
+                    }else
+                    {
+                        current.rs1 = EX.EX;
+                    }
                 }
             }
-            if (current.rs2_reg != 0 && is_rs2[current.i_type])
-            {
-                if (!EX.null && EX.rd == current.rs2_reg && EX.i_type == "0000011")
+
+            if(current.rs2_reg != 0){
+
+                if(!Data.null && current.rs2_reg == Data.rd)
                 {
-                    stallneeded = std::max(stallneeded, 1);
+                    if(Data.i_type == "0000011" || (current.i_type == "1100011" && branch_prediction))
+                    {
+                        stallneeded = 1;
+                        stall_installed = true;
+                    }
+                    else
+                    {
+                        current.rs2 = Data.EX;
+                    }
+                }
+
+                else if(!EX.null && EX.rd == current.rs2_reg)
+                {
+                    if (EX.i_type == "0000011" || (current.i_type == "1100011" && branch_prediction))
+                    {
+                        stallneeded = std::max(stallneeded, 1);
+                        stall_installed = true;
+                    }
+                    else
+                    {
+                        current.rs2 = EX.EX;
+                    }
                 }
             }
         }
@@ -381,7 +425,7 @@ public:
         return data;
     }
 
-    EX_DATA execute(I_DATA data)
+    EX_DATA execute(I_DATA &data)
     {
         EX_DATA EX_data;
         if (data.null)
@@ -599,6 +643,7 @@ public:
         EX_data.i_type = data.i_type;
         EX_data.null = false;
         EX_data.PC = data.PC;
+        Data.EX=EX_data.EX;
         return EX_data;
     }
 
