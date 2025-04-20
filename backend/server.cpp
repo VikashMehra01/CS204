@@ -12,166 +12,242 @@ using namespace std;
 
 Server svr;
 
-// Function to read and parse register.txt (Key-Value format)
+// File where boolean knobs are stored
+static const string BOOL_FILE = "variables.txt";
+// Ordered keys for boolean variables
+static const vector<string> BOOL_KEYS = {
+    "Pipeline",
+    "dataForwarding",
+    "PrintRegisterCycle",
+    "PipelineRegisetCycle",
+    "PrintBPU",
+};
+
+// Utility: Read key-value pairs from text file (space-separated)
 json readFile(const string &filename)
 {
     unordered_map<string, string> keyValuePairs;
     ifstream file(filename);
-
     if (!file.is_open())
     {
         cerr << "Error: Cannot open " << filename << endl;
         return json{{"error", "File not found"}};
     }
-
     string key, value;
     while (file >> key >> value)
-    { // Read key-value pairs (space-separated)
+    {
         keyValuePairs[key] = value;
     }
-
-    file.close();
     return keyValuePairs;
 }
 
-// Handle POST request for Assembly to Machine Code conversion
-void handleAssemblyRequest(const Request &req, Response &res)
+// Utility: Read boolean values from variables.txt into JSON
+json loadBooleans()
 {
-    string assemblyCode = req.body; // Get Assembly code from frontend
+    ifstream in(BOOL_FILE);
+    json j;
+    vector<bool> vals(BOOL_KEYS.size(), false); // Default to false for each boolean
 
-    // Save received assembly code to a file
-    ofstream outFile("input.asm");
-    outFile << assemblyCode;
-    outFile.close();
-
-    // Run the assembler (which generates 'output.mc' machine code file)
-    system("./main input.asm output.mc FinalOutput.txt memory.mem register.reg PC.pc");
-
-    // Read the machine code output file
-    ifstream inFile("FinalOutput.txt");
-    if (!inFile)
+    if (in.is_open())
     {
-        cerr << "Error: Could not open output.mc file!" << endl;
-        res.set_content("Error: Could not read output file", "text/plain");
+        string line;
+        size_t idx = 0;
+        while (getline(in, line) && idx < BOOL_KEYS.size())
+        {
+            vals[idx] = (line == "1"); // Store boolean value as true for "1", false otherwise
+            ++idx;
+        }
+        in.close();
+    }
+    // Fill in JSON object with key-value pairs
+    for (size_t i = 0; i < BOOL_KEYS.size(); ++i)
+    {
+        j[BOOL_KEYS[i]] = vals[i];
+    }
+    return j;
+}
+
+// Utility: Save boolean JSON to variables.txt
+void saveBooleans(const json &j)
+{
+    ofstream out(BOOL_FILE);
+    if (!out.is_open())
+    {
+        cerr << "Error: Cannot open " << BOOL_FILE << " for writing" << endl;
         return;
     }
 
+    for (const auto &key : BOOL_KEYS)
+    {
+        bool val = false;
+        if (j.contains(key) && j[key].is_boolean())
+        {
+            val = j[key].get<bool>();
+        }
+        out << (val ? "1" : "0") << "\n"; // Write "1" for true, "0" for false
+    }
+
+    out.close();
+}
+
+// Existing handlers...
+json readKVFile(const string &filename)
+{
+    return readFile(filename);
+}
+
+void handleAssemblyRequest(const Request &req, Response &res)
+{
+    string assemblyCode = req.body;
+    ofstream outFile("input.asm");
+    outFile << assemblyCode;
+    outFile.close();
+    system("./main input.asm output.mc FinalOutput.txt memory.mem register.reg PC.pc");
+    ifstream inFile("FinalOutput.txt");
+    if (!inFile)
+    {
+        cerr << "Error: Could not open FinalOutput.txt!" << endl;
+        res.set_content("Error: Could not read output file", "text/plain");
+        return;
+    }
     string machineCode((istreambuf_iterator<char>(inFile)), istreambuf_iterator<char>());
     inFile.close();
-
     res.set_header("Access-Control-Allow-Origin", "*");
     res.set_header("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
     res.set_header("Access-Control-Allow-Headers", "Content-Type");
-
-    // Send the machine code back to the frontend
     res.set_content(machineCode, "text/plain");
 }
 
-// Handle GET request to fetch register data
 void handleRegisterRequest(const Request &req, Response &res)
 {
-    json registerData = readFile("register.reg"); // Fixed filename
-
-    // cout << "called Me without calling me" << endl;
+    json registerData = readKVFile("register.reg");
     res.set_header("Access-Control-Allow-Origin", "*");
     res.set_header("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
     res.set_header("Access-Control-Allow-Headers", "Content-Type");
-
     res.set_content(registerData.dump(), "application/json");
 }
 
-// Handle POST request to update register values
 void handleRegisterUpdate(const Request &req, Response &res)
 {
-    json updatedRegisters;
-
+    json updated;
     res.set_header("Access-Control-Allow-Origin", "*");
     res.set_header("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
     res.set_header("Access-Control-Allow-Headers", "Content-Type");
     try
     {
-        updatedRegisters = json::parse(req.body);
+        updated = json::parse(req.body);
     }
-    catch (const json::parse_error &e)
+    catch (...)
     {
         res.status = 400;
         res.set_content("Invalid JSON format", "text/plain");
         return;
     }
-
-    // Save updated registers to file
-    ofstream outFile("register.mem");
+    ofstream outFile("register.reg");
     if (!outFile.is_open())
     {
-        res.set_content("Error: Could not open register.txt for writing", "text/plain");
+        res.set_content("Error: Could not open register.reg for writing", "text/plain");
         return;
     }
-
-    for (auto &[key, value] : updatedRegisters.items())
+    for (auto &el : updated.items())
     {
-        outFile << key << " " << value << "\n";
+        outFile << el.key() << " " << el.value().get<string>() << "\n";
     }
-
     outFile.close();
     res.set_content("Registers updated successfully", "text/plain");
 }
 
-// Handle GET request to fetch memory data
 void handleMemoryRequest(const Request &req, Response &res)
 {
-    json memoryData = readFile("memory.mem");
-
+    json memoryData = readKVFile("memory.mem");
     res.set_header("Access-Control-Allow-Origin", "*");
     res.set_header("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
     res.set_header("Access-Control-Allow-Headers", "Content-Type");
-
     res.set_content(memoryData.dump(), "application/json");
 }
 
-// Handle POST request to update memory values
 void handleMemoryUpdate(const Request &req, Response &res)
 {
-    json updatedMemory;
+    json updated;
     res.set_header("Access-Control-Allow-Origin", "*");
     res.set_header("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
     res.set_header("Access-Control-Allow-Headers", "Content-Type");
     try
     {
-        updatedMemory = json::parse(req.body);
+        updated = json::parse(req.body);
     }
-    catch (const json::parse_error &e)
+    catch (...)
+    {
+        res.status = 400;
+        res.set_content("Invalid JSON format", "text/plain");
+        return;
+    }
+    ofstream outFile("memory.mem");
+    if (!outFile.is_open())
+    {
+        res.set_content("Error: Could not open memory.mem for writing", "text/plain");
+        return;
+    }
+    for (auto &el : updated.items())
+    {
+        outFile << el.key() << " " << el.value().get<string>() << "\n";
+    }
+    outFile.close();
+    res.set_content("Memory updated successfully", "text/plain");
+}
+
+// New handlers for boolean knobs
+void handleGetBooleans(const Request &req, Response &res)
+{
+    json j = loadBooleans();
+    res.set_header("Access-Control-Allow-Origin", "*");
+    res.set_header("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
+    res.set_header("Access-Control-Allow-Headers", "Content-Type");
+    res.set_content(j.dump(), "application/json");
+}
+
+void handleUpdateBooleans(const Request &req, Response &res)
+{
+    json j;
+    res.set_header("Access-Control-Allow-Origin", "*");
+    res.set_header("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
+    res.set_header("Access-Control-Allow-Headers", "Content-Type");
+    try
+    {
+        j = json::parse(req.body); // Parse the incoming JSON body
+    }
+    catch (...)
     {
         res.status = 400;
         res.set_content("Invalid JSON format", "text/plain");
         return;
     }
 
-    // Save updated memory to file
-    ofstream outFile("memory.mem");
-    if (!outFile.is_open())
-    {
-        res.set_content("Error: Could not open memory.txt for writing", "text/plain");
-        return;
-    }
-
-    for (auto &[address, data] : updatedMemory.items())
-    {
-        outFile << address << " " << data << "\n";
-    }
-
-    outFile.close();
-    res.set_content("Memory updated successfully", "text/plain");
+    saveBooleans(j); // Save the updated booleans to file
+    res.set_content("Booleans updated successfully", "text/plain");
 }
 
 int main()
 {
     cout << "Server starting on http://localhost:3001" << endl;
 
+    // Global CORS handling for OPTIONS requests
+    svr.Options(R"(.*)", [](const Request &req, Response &res)
+                {
+        res.set_header("Access-Control-Allow-Origin", "*");
+        res.set_header("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
+        res.set_header("Access-Control-Allow-Headers", "Content-Type");
+        res.status = 200; });
+
+    // Existing endpoints
     svr.Post("/assemble", handleAssemblyRequest);
     svr.Get("/registers", handleRegisterRequest);
     svr.Post("/update-registers", handleRegisterUpdate);
     svr.Get("/memory", handleMemoryRequest);
     svr.Post("/update-memory", handleMemoryUpdate);
+    svr.Get("/get-booleans", handleGetBooleans);
+    svr.Post("/update-booleans", handleUpdateBooleans);
 
     svr.listen("0.0.0.0", 3001);
+    return 0;
 }

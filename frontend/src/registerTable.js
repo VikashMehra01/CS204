@@ -22,33 +22,6 @@ function RegisterTable() {
       });
   }, []);
 
-  // Handle input changes
-  const handleInputChange = (key, newValue) => {
-    setRegisters((prev) => ({
-      ...prev,
-      [key]: newValue,
-    }));
-  };
-
-  // Send updated data to backend
-  const handleSave = () => {
-    fetch("http://localhost:3001/update-registers", {
-      //  Correct API endpoint
-      method: "POST", // Correct HTTP method
-      headers: { "Content-Type": "application/json" }, //  Correct header
-      body: JSON.stringify(registers), // ✅ Sending JSON data
-    })
-      .then((response) => {
-        if (!response.ok) throw new Error("Failed to update registers"); //  Error handling
-        return response.text();
-      })
-      .then(() => alert("Registers updated successfully!")) //  Success alert
-      .catch((error) => {
-        console.error("Error updating register data:", error);
-        alert("Failed to update registers");
-      });
-  };
-
   if (loading) return <p>Loading...</p>;
   if (error) return <p style={{ color: "red" }}>{error}</p>;
 
@@ -69,7 +42,6 @@ function RegisterTable() {
           margin: "auto",
           border: "1px solid #ccc",
           borderRadius: "5px",
-          scrollbarWidth: "none",
         }}
       >
         <table
@@ -79,7 +51,6 @@ function RegisterTable() {
             tableLayout: "fixed",
           }}
         >
-          {/* Sticky Header */}
           <thead
             style={{
               padding: "10px",
@@ -87,8 +58,7 @@ function RegisterTable() {
               position: "sticky",
               top: 0,
               zIndex: 2,
-              textAlign: "left", // Ensures alignment
-              width: "100%",
+              textAlign: "left",
             }}
           >
             <tr>
@@ -97,6 +67,9 @@ function RegisterTable() {
                   padding: "10px",
                   borderBottom: "1px solid #000",
                   width: "30%",
+                  textAlign: "center",
+                  fontWeight: "bold",
+                  background: "#f8f9fa",
                 }}
               >
                 Register
@@ -106,6 +79,9 @@ function RegisterTable() {
                   padding: "10px",
                   borderBottom: "1px solid #000",
                   width: "70%",
+                  textAlign: "center",
+                  fontWeight: "bold",
+                  background: "#f8f9fa",
                 }}
               >
                 Value
@@ -119,32 +95,13 @@ function RegisterTable() {
                   {key}
                 </td>
                 <td style={{ padding: "8px", border: "1px solid #ccc" }}>
-                  <input
-                    type="text"
-                    value={value}
-                    onChange={(e) => handleInputChange(key, e.target.value)}
-                    style={{ width: "100%", border: "none" }}
-                  />
+                  {value}
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-      {/* Save Button */}
-      {/* <button
-        onClick={handleSave}
-        style={{
-          marginTop: "10px",
-          padding: "8px 12px",
-          background: "green",
-          color: "white",
-          border: "none",
-          cursor: "pointer",
-        }}
-      >
-        Save Changes
-      </button> */}
     </div>
   );
 }

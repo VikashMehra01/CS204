@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import "./App.css";
 import RegisterTable from "./registerTable.js";
 import MemoryTable from "./memoryTable.js";
@@ -7,6 +7,19 @@ export default function App() {
   const [assemblyCode, setAssemblyCode] = useState("");
   const [machineCode, setMachineCode] = useState("");
   const [activeTab, setActiveTab] = useState("input");
+  const [booleans, setBooleans] = useState({
+    Pipeline: false,
+    dataForwarding: false,
+    PrintRegisterCycle: false,
+    PipelineRegisetCycle: false,
+    PrintBPU: false,
+  });
+
+  const [theme, setTheme] = useState("light");
+
+  const toggleTheme = () => {
+    setTheme((prevTheme) => (prevTheme === "light" ? "dark" : "light"));
+  };
   console.log("Powered by Vikash Mehra");
   const handleConvert = async () => {
     try {
@@ -24,10 +37,43 @@ export default function App() {
     }
   };
 
+  useEffect(() => {
+    const fetchBooleans = async () => {
+      try {
+        const response = await fetch("http://localhost:3001/get-booleans");
+        const data = await response.json();
+        setBooleans(data);
+      } catch (error) {
+        console.error("Error loading booleans variables:", error);
+      }
+    };
+    fetchBooleans();
+  }, []);
+
+  const handleToggle = (key) => {
+    const updatedBooleans = { ...booleans, [key]: !booleans[key] };
+    setBooleans(updatedBooleans);
+  };
+  const handleSaveBooleans = async () => {
+    try {
+      await fetch("http://localhost:3001/update-booleans", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(booleans),
+      });
+      alert("Saved!");
+    } catch (error) {
+      console.error("Error saving booleans:", error);
+    }
+  };
+
   return (
-    <div className="App">
+    <div className={`App ${theme}`}>
       <div className="header">
-        <p>RISC-V Assembler</p>
+        {/* <button className="theme-toggle" onClick={toggleTheme}>
+          {theme === "light" ? "🌙" : "☀️"}
+        </button> */}
+        <p>RISC-V 32</p>
       </div>
 
       <div className="tabs">
@@ -47,13 +93,32 @@ export default function App() {
 
       <div className="tab-content">
         {activeTab === "input" && (
-          <div className="code ">
-            <h1>Assembly Code</h1>
-            <textarea
-              value={assemblyCode}
-              onChange={(e) => setAssemblyCode(e.target.value)}
-            ></textarea>
-            <button onClick={handleConvert}>Convert to Machine Code</button>
+          <div className="Input">
+            <div className="code ">
+              <h1>Assembly Code</h1>
+              <textarea
+                value={assemblyCode}
+                onChange={(e) => setAssemblyCode(e.target.value)}
+              ></textarea>
+              <button onClick={handleConvert}>Simulate</button>
+            </div>
+            <div className="Knobs">
+              <h1>Settings</h1>
+              <div className="Knobs-cover">
+                {Object.entries(booleans).map(([key, value]) => (
+                  <div className="knob" key={key}>
+                    <label htmlFor={key}>{key}</label>
+                    <input
+                      type="checkbox"
+                      id={key}
+                      checked={value}
+                      onChange={() => handleToggle(key)}
+                    />
+                  </div>
+                ))}
+              </div>
+              <button onClick={handleSaveBooleans}>Save</button>
+            </div>
           </div>
         )}
 
@@ -61,16 +126,24 @@ export default function App() {
           <div className="output">
             <div className="machine-code">
               <h1>Machine Code</h1>
-              <textarea value={machineCode} readOnly></textarea>
+              <textarea value={machineCode} readOnly>
+                style=
+                {{
+                  border: "1px solid #ccc",
+                  backgroundColor: "#f0f0f0",
+                  resize: "none",
+                  outline: "none",
+                  color: "#333",
+                  fontFamily: "monospace",
+                }}
+              </textarea>
             </div>
             <div className="Register">
               <h1>Register</h1>
-              {/* <textarea value={assemblyCode} readOnly></textarea> */}
               <RegisterTable />
             </div>
             <div className="Memory">
               <h1>Memory</h1>
-              {/* <textarea value={assemblyCode} readOnly></textarea> */}
               <MemoryTable />
             </div>
           </div>

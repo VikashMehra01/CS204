@@ -5,6 +5,7 @@
 #include <fstream>
 #include <unordered_map>
 #include <string>
+#include <map>
 #include <vector>
 #include <cmath>
 
@@ -80,7 +81,10 @@ private:
     int limit_pc;
     bool branch_prediction = true;
     int temp_PC = 0;
-
+    bool Pipeline = true;
+    bool print_registers = false;
+    bool print_pipeline_registers = false;
+    bool print_BPU = false;
     I_DATA Data;
     MEMORY_DATA MEM;
     EX_DATA EX;
@@ -88,9 +92,9 @@ private:
 
     unordered_map<int, int> BPB;
     unordered_map<int, bool> BPT;
-
+    string BPU = "";
     unordered_map<int, string> PC_MAP;
-    unordered_map<int, long long int> Register{
+    map<int, long long int> Register{
         {0, 0},
         {1, 0},
         {2, 2147483612},
@@ -233,24 +237,39 @@ public:
         if (!DataForwarding)
         {
             // Original stall logic (no forwarding)
-            stall_installed = false;
             if (current.rs1_reg != 0)
             {
-                if ((!Data.null && current.rs1_reg == Data.rd) ||
-                    (!EX.null && current.rs1_reg == EX.rd) ||
-                    (!MEM.null && current.rs1_reg == MEM.rd))
+                if ((!Data.null && current.rs1_reg == Data.rd))
                 {
                     stall_installed = true;
-                    stallneeded = 3;
+                    stallneeded = max(stallneeded, 3);
+                }
+                else if ((!EX.null && current.rs1_reg == EX.rd))
+                {
+                    stall_installed = true;
+                    stallneeded = max(stallneeded, 2);
+                }
+                else if ((!MEM.null && current.rs1_reg == MEM.rd))
+                {
+                    stall_installed = true;
+                    stallneeded = max(stallneeded, 1);
                 }
             }
             if (current.rs2_reg != 0 && is_rs2[current.i_type])
             {
-                if ((!Data.null && current.rs2_reg == Data.rd) ||
-                    (!EX.null && current.rs2_reg == EX.rd) ||
-                    (!MEM.null && current.rs2_reg == MEM.rd))
+                if ((!Data.null && current.rs2_reg == Data.rd))
                 {
                     stallneeded = std::max(stallneeded, 3);
+                    stall_installed = true;
+                }
+                else if ((!EX.null && current.rs2_reg == EX.rd))
+                {
+                    stallneeded = std::max(stallneeded, 2);
+                    stall_installed = true;
+                }
+                else if ((!MEM.null && current.rs2_reg == MEM.rd))
+                {
+                    stallneeded = std::max(stallneeded, 1);
                     stall_installed = true;
                 }
             }
@@ -260,60 +279,79 @@ public:
             // Forwarding-enabled logic: Stall only for load-use hazards
             if (current.rs1_reg != 0)
             {
-                if (!Data.null && current.rs1_reg == Data.rd)
+                if (!EX.null && current.rs1_reg == EX.rd)
                 {
-                    if (Data.i_type == "0000011" || (current.i_type == "1100011" && !branch_prediction))
+                    if (EX.i_type == "0000011")
                     {
-                        stallneeded = 1;
+                        stallneeded = max(stallneeded, 1);
                         stall_installed = true;
                     }
-                    else
-                    {
-                        current.rs1 = Data.EX;
-                    }
-                }
-                else if (!EX.null && EX.rd == current.rs1_reg)
-                {
-                    // Load-use hazard: EX stage is a load, result not ready yet
-                    if (EX.i_type == "0000011" || (current.i_type == "1100011" && !branch_prediction))
-                    {
-                        stallneeded = 1;
-                        stall_installed = true;
-                    }
-                    else
+                    else if (EX.i_type != "0100011" && EX.i_type != "1100011")
                     {
                         current.rs1 = EX.EX;
+                        if (EX.EX == 40)
+                            cout << "I caught inside EX-1" << endl;
                     }
+                }
+                else if (!MEM.null && MEM.rd == current.rs1_reg)
+                {
+                    // Load-use hazard: EX stage is a load, result not ready yet
+
+                    if (MEM.i_type == "0000011")
+                    {
+                        current.rs1 = MEM.data;
+                        if (MEM.data == 40)
+                            cout << "I caught inside MEM_data-1" << endl;
+                    }
+                    else if (MEM.i_type != "0100011" && MEM.i_type != "1100011")
+                    {
+                        current.rs1 = MEM.EX;
+                        if (MEM.EX == 40)
+                            cout << "I caught inside MEM_EX-1" << endl;
+                    }
+                }
+                else
+                {
+                    stall_installed = false;
+                    stallneeded = 0;
                 }
             }
 
-            if (current.rs2_reg != 0)
+            if (current.rs2_reg != 0 && is_rs2[current.i_type])
             {
 
-                if (!Data.null && current.rs2_reg == Data.rd)
+                if (!EX.null && current.rs2_reg == EX.rd)
                 {
-                    if (Data.i_type == "0000011" || (current.i_type == "1100011" && branch_prediction))
+                    if (EX.i_type == "0000011")
                     {
-                        stallneeded = 1;
+                        stallneeded = max(stallneeded, 1);
                         stall_installed = true;
                     }
-                    else
-                    {
-                        current.rs2 = Data.EX;
-                    }
-                }
-
-                else if (!EX.null && EX.rd == current.rs2_reg)
-                {
-                    if (EX.i_type == "0000011" || (current.i_type == "1100011" && branch_prediction))
-                    {
-                        stallneeded = std::max(stallneeded, 1);
-                        stall_installed = true;
-                    }
-                    else
+                    else if (EX.i_type != "0100011" && EX.i_type != "1100011")
                     {
                         current.rs2 = EX.EX;
                     }
+                }
+
+                else if (!MEM.null && MEM.rd == current.rs2_reg)
+                {
+                    if (MEM.i_type == "0000011")
+                    {
+                        current.rs2 = MEM.data;
+                        if (MEM.data == 40)
+                            cout << "I caught inside MEM_data-2" << endl;
+                    }
+                    else if (MEM.i_type != "0100011" && MEM.i_type != "1100011")
+                    {
+                        current.rs2 = MEM.EX;
+                        if (MEM.EX == 40)
+                            cout << "I caught inside MEM_EX-2" << endl;
+                    }
+                }
+                else
+                {
+                    stall_installed = false;
+                    stallneeded = 0;
                 }
             }
         }
@@ -339,7 +377,7 @@ public:
         {
             return IR;
         }
-        if (PC_MAP.find(PC) == PC_MAP.end())
+        if (PC_MAP.find(PC) == PC_MAP.end() && Pipeline)
         {
             cout << "Error: PC not found in instruction map." << endl;
             return IR;
@@ -444,7 +482,8 @@ public:
         data.null = false;
         data.PC = IR.PC;
 
-        dataHazards(data);
+        if (Pipeline)
+            dataHazards(data);
 
         return data;
     }
@@ -541,19 +580,20 @@ public:
         // Branch instruction
         else if (operation == "beq")
         {
-
+            BPU = " PC: " + to_string(data.PC) + " Prediction: " + to_string(BPT[data.PC]);
             if (data.rs1 == data.rs2)
             {
                 BPB[data.PC] = data.PC + data.immi;
                 EX_data.EX = BPB[data.PC];
                 // branch prediction
-
                 if (BPT[data.PC] == true)
                 {
+                    BPU += " Correct prediction";
                     // Correct prediction
                 }
                 else if (BPT[data.PC] == false)
                 {
+                    BPU += " Incorrect prediction";
                     PC = BPB[data.PC];
                     BPT[data.PC] = true;
                     flushing = true;
@@ -561,12 +601,15 @@ public:
             }
             else
             {
+
                 if (BPT[data.PC] == false)
                 {
+                    BPU += " Correct prediction";
                     // Correct prediction
                 }
                 else
                 {
+                    BPU += " Incorrect prediction";
                     // Incorrect prediction
                     PC = data.PC + 4;
                     BPT[data.PC] = false;
@@ -576,6 +619,7 @@ public:
         }
         else if (operation == "bne")
         {
+            BPU = "PC: " + to_string(data.PC) + " Prediction: " + to_string(BPT[data.PC]);
             if (data.rs1 != data.rs2)
             {
                 BPB[data.PC] = data.PC + data.immi;
@@ -583,10 +627,12 @@ public:
                 // branch prediction
                 if (BPT[data.PC] == true)
                 {
+                    BPU += " Correct prediction";
                     // Correct prediction
                 }
                 else
                 {
+                    BPU += " Incorrect prediction";
                     PC = BPB[data.PC];
                     BPT[data.PC] = true;
                     flushing = true;
@@ -596,10 +642,12 @@ public:
             {
                 if (BPT[data.PC] == false)
                 {
+                    BPU += " Correct prediction";
                     // Correct prediction
                 }
                 else
                 {
+                    BPU += " Incorrect prediction";
                     // Incorrect prediction
                     PC = data.PC + 4;
                     BPT[data.PC] = false;
@@ -609,6 +657,7 @@ public:
         }
         else if (operation == "blt")
         {
+            BPU = "PC: " + to_string(data.PC) + " Prediction: " + to_string(BPT[data.PC]);
             if (data.rs1 < data.rs2)
             {
 
@@ -617,10 +666,12 @@ public:
                 // branch prediction
                 if (BPT[data.PC] == true)
                 {
+                    BPU += " Correct prediction";
                     // Correct prediction
                 }
                 else
                 {
+                    BPU += " Incorrect prediction";
                     PC = BPB[data.PC];
                     BPT[data.PC] = true;
                     flushing = true;
@@ -630,10 +681,12 @@ public:
             {
                 if (BPT[data.PC] == false)
                 {
+                    BPU += " Correct prediction";
                     // Correct prediction
                 }
                 else
                 {
+                    BPU += " Incorrect prediction";
                     // Incorrect prediction
                     PC = data.PC + 4;
                     BPT[data.PC] = false;
@@ -643,6 +696,7 @@ public:
         }
         else if (operation == "bge")
         {
+            BPU = "PC: " + to_string(data.PC) + " Prediction: " + to_string(BPT[data.PC]);
             if (data.rs1 >= data.rs2)
             {
                 BPB[data.PC] = data.PC + data.immi;
@@ -650,10 +704,12 @@ public:
                 // branch prediction
                 if (BPT[data.PC] == true)
                 {
+                    BPU += " Correct prediction";
                     // Correct prediction
                 }
                 else
                 {
+                    BPU += " Incorrect prediction";
                     PC = BPB[data.PC];
                     BPT[data.PC] = true;
                     flushing = true;
@@ -663,10 +719,12 @@ public:
             {
                 if (BPT[data.PC] == false)
                 {
+                    BPU += " Correct prediction";
                     // Correct prediction
                 }
                 else
                 {
+                    BPU += " Incorrect prediction";
                     // Incorrect prediction
                     PC = data.PC + 4;
                     BPT[data.PC] = false;
@@ -676,6 +734,7 @@ public:
         }
         else if (operation == "bltu")
         {
+            BPU = "PC: " + to_string(data.PC) + " Prediction: " + to_string(BPT[data.PC]);
             if (data.rs1 < data.rs2)
             {
 
@@ -684,10 +743,12 @@ public:
                 // branch prediction
                 if (BPT[data.PC] == true)
                 {
+                    BPU += " Correct prediction";
                     // Correct prediction
                 }
                 else
                 {
+                    BPU += " Incorrect prediction";
                     PC = BPB[data.PC];
                     BPT[data.PC] = true;
                     flushing = true;
@@ -697,10 +758,12 @@ public:
             {
                 if (BPT[data.PC] == false)
                 {
+                    BPU += " Correct prediction";
                     // Correct prediction
                 }
                 else
                 {
+                    BPU += " Incorrect prediction";
                     // Incorrect prediction
                     PC = data.PC + 4;
                     BPT[data.PC] = false;
@@ -710,6 +773,7 @@ public:
         }
         else if (operation == "bgeu")
         {
+            BPU = "PC: " + to_string(data.PC) + " Prediction: " + to_string(BPT[data.PC]);
             if (data.rs1 >= data.rs2)
             {
 
@@ -718,10 +782,12 @@ public:
                 // branch prediction
                 if (BPT[data.PC] == true)
                 {
+                    BPU += " Correct prediction";
                     // Correct prediction
                 }
                 else
                 {
+                    BPU += " Incorrect prediction";
                     PC = BPB[data.PC];
                     BPT[data.PC] = true;
                     flushing = true;
@@ -731,10 +797,12 @@ public:
             {
                 if (BPT[data.PC] == false)
                 {
+                    BPU += " Correct prediction";
                     // Correct prediction
                 }
                 else
                 {
+                    BPU += " Incorrect prediction";
                     // Incorrect prediction
                     PC = data.PC + 4;
                     BPT[data.PC] = false;
@@ -779,14 +847,18 @@ public:
         // differnt
         else if (operation == "jal")
         {
+            BPU = "PC: " + to_string(data.PC) + " Predicted-Target: " + to_string(BPB[data.PC]);
             EX_data.EX = data.PC + 4;
             int target = data.PC + data.immi;
             if (BPB[data.PC] == target)
             {
+                BPU += " Correct prediction";
                 // Correct prediction
             }
             else
             {
+                BPU += " Incorrect prediction ";
+                BPU += " Actual-Target: " + to_string(target);
                 PC = target;
                 BPB[data.PC] = target;
                 BPT[data.PC] = true;
@@ -795,14 +867,19 @@ public:
         }
         else if (operation == "jalr")
         {
+            BPU = "PC: " + to_string(data.PC) + " Predicted-Target: " + to_string(BPB[data.PC]);
             EX_data.EX = data.PC + 4;
             int target = data.rs1 + data.immi;
             if (BPB[data.PC] == target)
             {
+                BPU += " Correct prediction";
                 // Correct prediction
             }
             else
             {
+                BPU += " Incorrect prediction ";
+                BPU += " Actual-Target: " + to_string(target);
+                // Incorrect prediction
                 PC = target;
                 BPB[data.PC] = target;
                 BPT[data.PC] = true;
@@ -836,21 +913,7 @@ public:
         EX_data.null = false;
         EX_data.PC = data.PC;
         Data.EX = EX_data.EX;
-        // if (data.i_type == "1100011")
-        // {
-        //     // Branch instruction
-        //     BPB[data.PC] = data.PC + data.immi;
-        // }
-        // if (data.i_type == "1101111")
-        // {
-        //     // JAL instruction
-        //     BPB[data.PC] = data.PC + data.immi;
-        // }
-        // if (data.i_type == "1100111")
-        // {
-        //     // JALR instruction
-        //     BPB[data.PC] = data.rs1 + data.immi;
-        // }
+
         return EX_data;
     }
 
@@ -973,63 +1036,72 @@ public:
         outFile.close();
     }
 
-    // void NonPiplined(const string &filename, const string &outputFile, const string &memory_file, const string &register_file)
-    // {
-    //     store_PC(filename);
-    //     ofstream outFile(outputFile);
-    //     int cycles = 0;
-    //     while (PC < limit_pc)
-    //     {
-    //         cycles++;
-    //         string IR = Fetch();
-    //         outFile << "Fetch   :" << IR << " " << PC << endl;
-    //         I_DATA data = decode(IR);
-    //         outFile << "Decode  :" << data.operation << " ";
-    //         if (!(data.i_type == "0100011" || data.i_type == "1100011"))
-    //         {
-    //             outFile << "rd:" << data.rd;
-    //         }
-    //         if (!(data.i_type == "0110111" || data.i_type == "0010111" || data.i_type == "1101111"))
-    //         {
-    //             outFile << " rs1:" << data.rs1;
-    //         }
-    //         if (!(data.i_type == "0010011" || data.i_type == "0000011" || data.i_type == "1101111" || data.i_type == "0110111" || data.i_type == "0010111"))
-    //         {
-    //             outFile << " rs2:" << data.rs2;
-    //         }
-    //         if (!(data.i_type == "0110011"))
-    //         {
-    //             outFile << " imm:" << data.immi;
-    //         }
-    //         outFile << endl;
-    //         execute(data);
-    //         outFile << "Execute :" << EX << endl;
-    //         memory(data);
-    //         if (data.i_type == "0000011" || data.i_type == "0100011")
-    //         {
-    //             outFile << "Memory  :" << Register[data.rd] << endl;
-    //         }
-    //         else
-    //         {
-    //             outFile << "Memory  :" << "Not used" << endl;
-    //         }
-    //         write_back(data);
-    //         if (data.i_type == "0100011" || data.i_type == "1100011")
-    //         {
-    //             outFile << "WriteBack   :" << "Not used" << endl;
-    //         }
-    //         else
-    //         {
-    //             outFile << "WriteBack   :" << Register[data.rd] << endl;
-    //         }
-    //         outFile << "------------------------------------------------------------------------------------" << endl;
-    //     }
-    //     outFile << "Cycles: " << cycles << endl;
-    //     outFile.close();
-    //     saveRegisterToFile(register_file);
-    //     saveMemoryToFile(memory_file);
-    //     cout << "Simulation Completed" << endl;
-    // }
+    void NonPiplined(const string &filename, const string &outputFile, const string &memory_file, const string &register_file)
+    {
+        store_PC(filename);
+        ofstream outFile(outputFile);
+        int cycles = 0;
+        while (PC < limit_pc)
+        {
+            cycles++;
+            IF_ID IR = Fetch();
+            outFile << "Fetch   :" << IR.IR << " " << PC << endl;
+            I_DATA data = decode(IR);
+            outFile << "Decode  :" << data.operation << " ";
+            if (!(data.i_type == "0100011" || data.i_type == "1100011"))
+            {
+                outFile << "rd:" << data.rd;
+            }
+            if (!(data.i_type == "0110111" || data.i_type == "0010111" || data.i_type == "1101111"))
+            {
+                outFile << " rs1:" << data.rs1;
+            }
+            if (!(data.i_type == "0010011" || data.i_type == "0000011" || data.i_type == "1101111" || data.i_type == "0110111" || data.i_type == "0010111"))
+            {
+                outFile << " rs2:" << data.rs2;
+            }
+            if (!(data.i_type == "0110011"))
+            {
+                outFile << " imm:" << data.immi;
+            }
+            outFile << endl;
+            EX_DATA EX = execute(data);
+            outFile << "Execute :" << EX.EX << endl;
+            MEMORY_DATA MEM = memory(EX);
+            if (data.i_type == "0000011" || data.i_type == "0100011")
+            {
+                outFile << "Memory  :" << Register[data.rd] << endl;
+            }
+            else
+            {
+                outFile << "Memory  :" << "Not used" << endl;
+            }
+            write_back(MEM);
+            if (data.i_type == "0100011" || data.i_type == "1100011")
+            {
+                outFile << "WriteBack   :" << "Not used" << endl;
+            }
+            else
+            {
+                outFile << "WriteBack   :" << Register[data.rd] << endl;
+            }
+            outFile << "------------------------------------------------------------------------------------" << endl;
+            if (print_registers)
+            {
+                outFile << "Registers:" << endl;
+                for (const auto &pair : Register)
+                {
+                    cout << pair.first << ": " << pair.second << endl;
+                }
+                outFile << "------------------------------------------------------------------------------------" << endl;
+            }
+        }
+        outFile << "Cycles: " << cycles << endl;
+        outFile.close();
+        saveRegisterToFile(register_file);
+        saveMemoryToFile(memory_file);
+        cout << "Simulation Completed" << endl;
+    }
     void Pipelined(const string &filename, const string &outputFile, const string &memory_file, const string &register_file)
     {
         store_PC(filename);
@@ -1063,6 +1135,8 @@ public:
             }
 
             memory_buffer = memory(EX);
+
+            MEM = memory_buffer;
             // Memory
             if (!EX.null)
             {
@@ -1076,6 +1150,7 @@ public:
 
             EX_buffer = execute(Data);
             // Execute
+            EX = EX_buffer;
             if (!Data.null)
             {
                 active_stages = true;
@@ -1115,6 +1190,7 @@ public:
                 IR_Buffer = Fetch();
                 if (!IR_Buffer.null)
                 {
+
                     active_stages = true;
                     F = "Fetch: " + IR_Buffer.IR + " PC:" + to_string(IR_Buffer.PC);
                 }
@@ -1129,10 +1205,18 @@ public:
                 break;
             }
 
-            MEM = memory_buffer;
             memory_buffer.null = true;
 
-            EX = EX_buffer;
+            outFile << "Cycle " << cycles++ << endl;
+            if (!IR_Buffer.null)
+            {
+                if (print_BPU)
+                {
+                    outFile << BPU << endl;
+                    // outFile << "------------------------------------------------------------------------------------" << endl;
+                }
+            }
+
             EX_buffer.null = true;
 
             // data transfer
@@ -1155,26 +1239,118 @@ public:
                 IR_Buffer.null = true;
                 Data.null = true;
             }
-            cout << "Cycle " << cycles << endl;
-            outFile << "Cycle " << cycles++ << endl;
-            outFile << F << endl;
-            outFile << D << endl;
-            outFile << E << endl;
-            outFile << M << endl;
-            outFile << W << endl;
+
+            if (print_pipeline_registers)
+            {
+                outFile << F << endl;
+                outFile << D << endl;
+                outFile << E << endl;
+                outFile << M << endl;
+                outFile << W << endl;
+                // outFile << "------------------------------------------------------------------------------------" << endl;
+            }
+
+            if (print_registers)
+            {
+                outFile << "Registers:" << endl;
+                for (const auto &pair : Register)
+                {
+                    outFile << "x" << pair.first << ": " << pair.second << endl;
+                }
+                // outFile << "------------------------------------------------------------------------------------" << endl;
+            }
             outFile << "------------------------------------------------------------------------------------" << endl;
         }
-
         outFile << "Total Cycles: " << cycles << endl;
         outFile << PC << endl;
         saveRegisterToFile(register_file);
         saveMemoryToFile(memory_file);
         cout << "Simulation Completed" << endl;
-        cout << "LIMIT" << limit_pc << endl;
+    }
 
-        for (auto &[key, value] : BPB)
+    void changeVariables()
+    {
+        ifstream inFile("variables.txt");
+        if (!inFile)
         {
-            cout << key << " " << value << endl;
+            cerr << "Error: Could not open file for reading!\n";
+            return;
+        }
+        string line;
+        int count = 0;
+        while (getline(inFile, line))
+        {
+            if (count == 0)
+            {
+                if (line == "1")
+                {
+                    Pipeline = true;
+                }
+                else
+                {
+                    Pipeline = false;
+                }
+            }
+
+            if (count == 1)
+            {
+                if (line == "1")
+                {
+                    DataForwarding = true;
+                }
+                else
+                {
+                    DataForwarding = false;
+                }
+            }
+            if (count == 2)
+            {
+                if (line == "1")
+                {
+                    print_registers = true;
+                }
+                else
+                {
+                    print_registers = false;
+                }
+            }
+            if (count == 3)
+            {
+                if (line == "1")
+                {
+                    print_pipeline_registers = true;
+                }
+                else
+                {
+                    print_pipeline_registers = false;
+                }
+            }
+            if (count == 4)
+            {
+                if (line == "1")
+                {
+                    print_BPU = true;
+                }
+                else
+                {
+                    print_BPU = false;
+                }
+            }
+            count++;
+        }
+        inFile.close();
+    }
+    Simulator(const string &filename, const string &outputFile, const string &memory_file, const string &register_file)
+    {
+        changeVariables();
+
+        if (Pipeline)
+        {
+            Pipelined(filename, outputFile, memory_file, register_file);
+        }
+        else
+        {
+            NonPiplined(filename, outputFile, memory_file, register_file);
         }
     }
 };
