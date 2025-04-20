@@ -21,6 +21,9 @@ static const vector<string> BOOL_KEYS = {
     "PrintRegisterCycle",
     "PipelineRegisetCycle",
     "PrintBPU",
+    "SpecificInstruction",
+    "cycles",
+    "PC",
 };
 
 // Utility: Read key-value pairs from text file (space-separated)
@@ -46,24 +49,41 @@ json loadBooleans()
 {
     ifstream in(BOOL_FILE);
     json j;
-    vector<bool> vals(BOOL_KEYS.size(), false); // Default to false for each boolean
+    size_t boolCount = BOOL_KEYS.size() - 1; // Last one is integer
+    vector<bool> vals(boolCount, false);     // For boolean values only
 
     if (in.is_open())
     {
         string line;
         size_t idx = 0;
-        while (getline(in, line) && idx < BOOL_KEYS.size())
+        while (getline(in, line))
         {
-            vals[idx] = (line == "1"); // Store boolean value as true for "1", false otherwise
+            if (idx < boolCount)
+            {
+                vals[idx] = (line == "1");
+            }
+            else if (idx == boolCount) // Last line = integer
+            {
+                try
+                {
+                    j[BOOL_KEYS[idx]] = stoi(line);
+                    // cout << "Integer value: " << j[BOOL_KEYS[idx]] << endl;
+                }
+                catch (...)
+                {
+                    j[BOOL_KEYS[idx]] = 0;
+                }
+            }
             ++idx;
         }
         in.close();
     }
-    // Fill in JSON object with key-value pairs
-    for (size_t i = 0; i < BOOL_KEYS.size(); ++i)
+
+    for (size_t i = 0; i < boolCount; ++i)
     {
         j[BOOL_KEYS[i]] = vals[i];
     }
+
     return j;
 }
 
@@ -77,15 +97,27 @@ void saveBooleans(const json &j)
         return;
     }
 
-    for (const auto &key : BOOL_KEYS)
+    size_t boolCount = BOOL_KEYS.size() - 1; // Last is integer
+
+    for (size_t i = 0; i < boolCount; ++i)
     {
+        const auto &key = BOOL_KEYS[i];
         bool val = false;
         if (j.contains(key) && j[key].is_boolean())
         {
             val = j[key].get<bool>();
         }
-        out << (val ? "1" : "0") << "\n"; // Write "1" for true, "0" for false
+        out << (val ? "1" : "0") << "\n";
     }
+
+    // Write integer as last line
+    const string &intKey = BOOL_KEYS[boolCount];
+    int intVal = 0;
+    if (j.contains(intKey) && j[intKey].is_number_integer())
+    {
+        intVal = j[intKey].get<int>();
+    }
+    out << intVal << "\n";
 
     out.close();
 }

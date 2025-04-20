@@ -8,6 +8,7 @@
 #include <map>
 #include <vector>
 #include <cmath>
+#include <set>
 
 #include "memory.h"
 
@@ -85,11 +86,25 @@ private:
     bool print_registers = false;
     bool print_pipeline_registers = false;
     bool print_BPU = false;
+    bool specificInstruction = false;
+    int specificInstructionAddress = 0;
+    bool printCycle = false;
+
+    int dynamic_instruction_count = 0;
+    int CPI;
+    int No_of_data_transfers = 0;
+    int No_of_ALU_operations = 0;
+    int No_of_control_operations = 0;
+    int No_of_stalls_data_hazards = 0;
+    int No_of_stalls_control_hazards = 0;
+    int No_of_data_hazards = 0;
+    int No_of_control_hazards = 0;
+    int No_of_Mispredictions = 0;
     I_DATA Data;
     MEMORY_DATA MEM;
     EX_DATA EX;
     IF_ID IR;
-
+    unordered_map<int, vector<pair<int, string>>> Instruction_map;
     unordered_map<int, int> BPB;
     unordered_map<int, bool> BPT;
     string BPU = "";
@@ -356,6 +371,11 @@ public:
             }
         }
         stalls = stallneeded;
+        No_of_stalls_data_hazards += stallneeded;
+        if (stallneeded > 0)
+        {
+            No_of_data_hazards++;
+        }
     }
     void store_PC(const string &filename)
     {
@@ -496,6 +516,12 @@ public:
             return EX_data;
         }
 
+        No_of_ALU_operations++;
+
+        if (data.i_type == "1100011" || data.i_type == "1101111" || data.i_type == "1100111")
+        {
+            No_of_control_operations++;
+        }
         string operation = data.operation;
         if (operation == "add")
         {
@@ -593,6 +619,8 @@ public:
                 }
                 else if (BPT[data.PC] == false)
                 {
+                    No_of_Mispredictions++;
+                    No_of_control_hazards++;
                     BPU += " Incorrect prediction";
                     PC = BPB[data.PC];
                     BPT[data.PC] = true;
@@ -609,6 +637,9 @@ public:
                 }
                 else
                 {
+                    No_of_Mispredictions++;
+                    No_of_control_hazards++;
+                    // Incorrect prediction
                     BPU += " Incorrect prediction";
                     // Incorrect prediction
                     PC = data.PC + 4;
@@ -632,6 +663,8 @@ public:
                 }
                 else
                 {
+                    No_of_Mispredictions++;
+                    No_of_control_hazards++;
                     BPU += " Incorrect prediction";
                     PC = BPB[data.PC];
                     BPT[data.PC] = true;
@@ -647,6 +680,8 @@ public:
                 }
                 else
                 {
+                    No_of_Mispredictions++;
+                    No_of_control_hazards++;
                     BPU += " Incorrect prediction";
                     // Incorrect prediction
                     PC = data.PC + 4;
@@ -671,6 +706,8 @@ public:
                 }
                 else
                 {
+                    No_of_Mispredictions++;
+                    No_of_control_hazards++;
                     BPU += " Incorrect prediction";
                     PC = BPB[data.PC];
                     BPT[data.PC] = true;
@@ -686,6 +723,8 @@ public:
                 }
                 else
                 {
+                    No_of_Mispredictions++;
+                    No_of_control_hazards++;
                     BPU += " Incorrect prediction";
                     // Incorrect prediction
                     PC = data.PC + 4;
@@ -709,6 +748,9 @@ public:
                 }
                 else
                 {
+                    No_of_Mispredictions++;
+                    No_of_control_hazards++;
+
                     BPU += " Incorrect prediction";
                     PC = BPB[data.PC];
                     BPT[data.PC] = true;
@@ -724,6 +766,8 @@ public:
                 }
                 else
                 {
+                    No_of_Mispredictions++;
+                    No_of_control_hazards++;
                     BPU += " Incorrect prediction";
                     // Incorrect prediction
                     PC = data.PC + 4;
@@ -748,6 +792,8 @@ public:
                 }
                 else
                 {
+                    No_of_Mispredictions++;
+                    No_of_control_hazards++;
                     BPU += " Incorrect prediction";
                     PC = BPB[data.PC];
                     BPT[data.PC] = true;
@@ -763,6 +809,9 @@ public:
                 }
                 else
                 {
+                    No_of_Mispredictions++;
+                    No_of_control_hazards++;
+
                     BPU += " Incorrect prediction";
                     // Incorrect prediction
                     PC = data.PC + 4;
@@ -787,6 +836,9 @@ public:
                 }
                 else
                 {
+                    No_of_Mispredictions++;
+                    No_of_control_hazards++;
+
                     BPU += " Incorrect prediction";
                     PC = BPB[data.PC];
                     BPT[data.PC] = true;
@@ -802,6 +854,9 @@ public:
                 }
                 else
                 {
+                    No_of_Mispredictions++;
+                    No_of_control_hazards++;
+
                     BPU += " Incorrect prediction";
                     // Incorrect prediction
                     PC = data.PC + 4;
@@ -857,6 +912,7 @@ public:
             }
             else
             {
+                No_of_control_hazards++;
                 BPU += " Incorrect prediction ";
                 BPU += " Actual-Target: " + to_string(target);
                 PC = target;
@@ -877,6 +933,7 @@ public:
             }
             else
             {
+                No_of_control_hazards++;
                 BPU += " Incorrect prediction ";
                 BPU += " Actual-Target: " + to_string(target);
                 // Incorrect prediction
@@ -932,6 +989,7 @@ public:
 
         if (EX.i_type == "0100011")
         {
+            No_of_data_transfers++;
             int val = EX.rs2;
             string curr = EX.operation;
 
@@ -960,6 +1018,7 @@ public:
         else if (EX.i_type == "0000011")
         {
 
+            No_of_data_transfers++;
             string curr = EX.operation;
             if (curr == "lb")
             {
@@ -1000,6 +1059,7 @@ public:
 
     void write_back(MEMORY_DATA MEM)
     {
+
         if (MEM.null || MEM.rd == 0)
         {
             return;
@@ -1016,6 +1076,7 @@ public:
         {
             // No write-back for store instructions
         }
+        dynamic_instruction_count++;
     }
 
     void saveRegisterToFile(const string &filename)
@@ -1043,7 +1104,10 @@ public:
         int cycles = 0;
         while (PC < limit_pc)
         {
-            cycles++;
+            if (printCycle)
+            {
+                outFile << "Cycle " << cycles << ": " << endl;
+            }
             IF_ID IR = Fetch();
             outFile << "Fetch   :" << IR.IR << " " << PC << endl;
             I_DATA data = decode(IR);
@@ -1085,7 +1149,6 @@ public:
             {
                 outFile << "WriteBack   :" << Register[data.rd] << endl;
             }
-            outFile << "------------------------------------------------------------------------------------" << endl;
             if (print_registers)
             {
                 outFile << "Registers:" << endl;
@@ -1093,10 +1156,22 @@ public:
                 {
                     cout << pair.first << ": " << pair.second << endl;
                 }
-                outFile << "------------------------------------------------------------------------------------" << endl;
             }
+            outFile << "------------------------------------------------------------------------------------" << endl;
+            cycles++;
         }
-        outFile << "Cycles: " << cycles << endl;
+        outFile << "Total Cycles: " << cycles << endl;
+        outFile << "Total Instructions: " << dynamic_instruction_count << endl;
+        outFile << "CPI" << ": " << (float)cycles / dynamic_instruction_count << endl;
+        outFile << "Total ALU Operations: " << No_of_ALU_operations << endl;
+        outFile << "Total Data Transfers: " << No_of_data_transfers << endl;
+        outFile << "Total Control Operations: " << No_of_control_operations << endl;
+        // outFile << "Total Data Hazards: " << No_of_data_hazards << endl;
+        // outFile << "Total Control Hazards: " << No_of_control_hazards << endl;
+        // outFile << "Total Mispredictions: " << No_of_Mispredictions << endl;
+        // outFile << "Total Stalls: " << No_of_stalls_data_hazards + No_of_stalls_control_hazards << endl;
+        // outFile << " Stalls due to Data Hazards: " << No_of_stalls_data_hazards << endl;
+        // outFile << " Stalls due to Control Hazards: " << No_of_stalls_control_hazards << endl;
         outFile.close();
         saveRegisterToFile(register_file);
         saveMemoryToFile(memory_file);
@@ -1128,6 +1203,7 @@ public:
             {
                 active_stages = true;
                 W = "WriteBack: " + to_string(MEM.rd) + " " + to_string(Register[MEM.rd]) + " PC:" + to_string(MEM.PC);
+                Instruction_map[MEM.PC / 4].push_back({cycles, W});
             }
             else
             {
@@ -1142,6 +1218,7 @@ public:
             {
                 active_stages = true;
                 M = "Memory: " + to_string(memory_buffer.EX) + " " + to_string(memory_buffer.rd) + " PC:" + to_string(memory_buffer.PC);
+                Instruction_map[memory_buffer.PC / 4].push_back({cycles, M});
             }
             else
             {
@@ -1155,6 +1232,7 @@ public:
             {
                 active_stages = true;
                 E = "Execute: " + to_string(EX_buffer.EX) + " " + to_string(EX_buffer.rd) + " PC:" + to_string(EX_buffer.PC);
+                Instruction_map[EX_buffer.PC / 4].push_back({cycles, E});
             }
             else
             {
@@ -1173,6 +1251,7 @@ public:
                 {
                     active_stages = true;
                     D = "Decode :    operation :" + Data_buffer.operation + " Rd:" + to_string(Data_buffer.rd) + " Rs1:" + to_string(Data_buffer.rs1) + " Rs2:" + to_string(Data_buffer.rs2) + " imm:" + to_string(Data_buffer.immi) + " PC:" + to_string(Data_buffer.PC);
+                    Instruction_map[Data_buffer.PC / 4].push_back({cycles, D});
                 }
                 else
                 {
@@ -1193,6 +1272,7 @@ public:
 
                     active_stages = true;
                     F = "Fetch: " + IR_Buffer.IR + " PC:" + to_string(IR_Buffer.PC);
+                    Instruction_map[IR_Buffer.PC / 4].push_back({cycles, F});
                 }
                 else
                 {
@@ -1207,7 +1287,11 @@ public:
 
             memory_buffer.null = true;
 
-            outFile << "Cycle " << cycles++ << endl;
+            if (printCycle)
+            {
+                outFile << "Cycle: " << cycles << endl;
+            }
+
             if (!IR_Buffer.null)
             {
                 if (print_BPU)
@@ -1238,6 +1322,7 @@ public:
                 flushing = false;
                 IR_Buffer.null = true;
                 Data.null = true;
+                No_of_stalls_control_hazards += 2;
             }
 
             if (print_pipeline_registers)
@@ -1259,10 +1344,30 @@ public:
                 }
                 // outFile << "------------------------------------------------------------------------------------" << endl;
             }
+            cycles++;
             outFile << "------------------------------------------------------------------------------------" << endl;
         }
+        if (specificInstruction)
+        {
+            for (auto &temp : Instruction_map[specificInstructionAddress])
+            {
+                outFile << "Cycle : " << temp.first << " Instruction_Status " << temp.second << endl;
+                // cout << temp << endl;
+            }
+        }
         outFile << "Total Cycles: " << cycles << endl;
-        outFile << PC << endl;
+        outFile << "Total Instructions: " << dynamic_instruction_count << endl;
+        outFile << "CPI" << ": " << (float)cycles / dynamic_instruction_count << endl;
+        outFile << "Total ALU Operations: " << No_of_ALU_operations << endl;
+        outFile << "Total Data Transfers: " << No_of_data_transfers << endl;
+        outFile << "Total Control Operations: " << No_of_control_operations << endl;
+        outFile << "Total Data Hazards: " << No_of_data_hazards << endl;
+        outFile << "Total Control Hazards: " << No_of_control_hazards << endl;
+        outFile << "Total Mispredictions: " << No_of_Mispredictions << endl;
+        outFile << "Total Stalls: " << No_of_stalls_data_hazards + No_of_stalls_control_hazards << endl;
+        outFile << " Stalls due to Data Hazards: " << No_of_stalls_data_hazards << endl;
+        outFile << " Stalls due to Control Hazards: " << No_of_stalls_control_hazards << endl;
+
         saveRegisterToFile(register_file);
         saveMemoryToFile(memory_file);
         cout << "Simulation Completed" << endl;
@@ -1335,6 +1440,32 @@ public:
                 {
                     print_BPU = false;
                 }
+            }
+            if (count == 5)
+            {
+                if (line == "1")
+                {
+                    specificInstruction = true;
+                }
+                else
+                {
+                    specificInstruction = false;
+                }
+            }
+            if (count == 6)
+            {
+                if (line == "1")
+                {
+                    printCycle = true;
+                }
+                else
+                {
+                    printCycle = false;
+                }
+            }
+            if (count == 7 && specificInstruction)
+            {
+                specificInstructionAddress = stoi(line);
             }
             count++;
         }

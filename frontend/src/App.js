@@ -7,12 +7,15 @@ export default function App() {
   const [assemblyCode, setAssemblyCode] = useState("");
   const [machineCode, setMachineCode] = useState("");
   const [activeTab, setActiveTab] = useState("input");
+  const [PC, setPC] = useState(0);
   const [booleans, setBooleans] = useState({
     Pipeline: false,
     dataForwarding: false,
     PrintRegisterCycle: false,
     PipelineRegisetCycle: false,
     PrintBPU: false,
+    SpecificInstruction: false,
+    cycles: false,
   });
 
   const [theme, setTheme] = useState("light");
@@ -53,14 +56,20 @@ export default function App() {
   const handleToggle = (key) => {
     const updatedBooleans = { ...booleans, [key]: !booleans[key] };
     setBooleans(updatedBooleans);
+    console.log("SpecificInstruction:", booleans.SpecificInstruction);
   };
   const handleSaveBooleans = async () => {
     try {
       await fetch("http://localhost:3001/update-booleans", {
+        // Corrected the endpoint
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(booleans),
+        body: JSON.stringify({
+          ...booleans,
+          PC: booleans.SpecificInstruction ? PC : 0,
+        }),
       });
+
       alert("Saved!");
     } catch (error) {
       console.error("Error saving booleans:", error);
@@ -105,17 +114,33 @@ export default function App() {
             <div className="Knobs">
               <h1>Settings</h1>
               <div className="Knobs-cover">
-                {Object.entries(booleans).map(([key, value]) => (
-                  <div className="knob" key={key}>
-                    <label htmlFor={key}>{key}</label>
+                <div>
+                  {Object.entries(booleans)
+                    .filter(([key, val]) => typeof val === "boolean")
+                    .map(([key, value]) => (
+                      <div className="knob" key={key}>
+                        <label htmlFor={key}>{key}</label>
+                        <input
+                          type="checkbox"
+                          id={key}
+                          checked={value}
+                          onChange={() => handleToggle(key)}
+                        />
+                      </div>
+                    ))}
+                </div>
+
+                {booleans.SpecificInstruction && (
+                  <div className="knob">
+                    <label htmlFor="PC">PC:</label>
                     <input
-                      type="checkbox"
-                      id={key}
-                      checked={value}
-                      onChange={() => handleToggle(key)}
+                      type="number"
+                      id="PC"
+                      value={PC}
+                      onChange={(e) => setPC(parseInt(e.target.value))}
                     />
                   </div>
-                ))}
+                )}
               </div>
               <button onClick={handleSaveBooleans}>Save</button>
             </div>

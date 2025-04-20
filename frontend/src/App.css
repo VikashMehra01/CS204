@@ -246,3 +246,32 @@ button:hover {
 .theme-toggle {
   color: #38bdf8;
 }
+
+/* Base styling */
+.knob input[type="number"] {
+  width: 80px;
+  padding: 0.4rem 0.6rem;
+  border: 2px solid #7fb9f7;
+  border-radius: 6px;
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+/* Focus effect */
+.knob input[type="number"]:focus {
+  border-color: #0056b3;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+}
+
+/* Hide default arrows in Webkit browsers */
+.knob input[type="number"]::-webkit-inner-spin-button,
+.knob input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Hide default arrows in Firefox */
+.knob input[type="number"] {
+  -moz-appearance: textfield;
+}
