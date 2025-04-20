@@ -73,7 +73,7 @@ class Simulator
 private:
     /* data */
     int PC = 0x0;
-    bool DataForwarding = true;
+    bool DataForwarding = false;
     bool flushing = false;
     int stalls = 0;
     bool stall_installed = false;
@@ -780,14 +780,15 @@ public:
         else if (operation == "jal")
         {
             EX_data.EX = data.PC + 4;
-            BPB[data.PC] = data.PC + data.immi;
-            if (BPT[data.PC] == true)
+            int target = data.PC + data.immi;
+            if (BPB[data.PC] == target)
             {
                 // Correct prediction
             }
             else
             {
-                PC = BPB[data.PC];
+                PC = target;
+                BPB[data.PC] = target;
                 BPT[data.PC] = true;
                 flushing = true;
             }
@@ -795,14 +796,15 @@ public:
         else if (operation == "jalr")
         {
             EX_data.EX = data.PC + 4;
-            BPB[data.PC] = data.rs1 + data.immi;
-            if (BPT[data.PC] == true)
+            int target = data.rs1 + data.immi;
+            if (BPB[data.PC] == target)
             {
                 // Correct prediction
             }
             else
             {
-                PC = BPB[data.PC];
+                PC = target;
+                BPB[data.PC] = target;
                 BPT[data.PC] = true;
                 flushing = true;
             }
