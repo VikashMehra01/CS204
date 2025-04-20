@@ -38,11 +38,11 @@ Fetch: 00000000010100010010000000100011 PC:20
 Decode :    operation :addi Rd:2 Rs1:2147483612 Rs2:0 imm:-8 PC:16
 Execute: Not used
 Memory: 12 1 PC:8
-WriteBack: 5 5 PC:4
+WriteBack: 5 2 PC:4
 ------------------------------------------------------------------------------------
 Cycle 6
 Fetch: 00000000000100010010001000100011 PC:24
-Decode :    operation :sw Rd:0 Rs1:2147483604 Rs2:5 imm:0 PC:20
+Decode :    operation :sw Rd:0 Rs1:2147483604 Rs2:2 imm:0 PC:20
 Execute: 2147483604 2 PC:16
 Memory: Not used
 WriteBack: 1 12 PC:8
@@ -62,626 +62,263 @@ Memory: 2147483604 0 PC:20
 WriteBack: 2 2147483604 PC:16
 ------------------------------------------------------------------------------------
 Cycle 9
-Fetch : Stalls
-Decode :    operation :blt Rd:12 Rs1:0 Rs2:5 imm:12 PC:32
+Fetch: 00000000000100000000001010010011 PC:36
+Decode :    operation :blt Rd:12 Rs1:1 Rs2:2 imm:12 PC:32
 Execute: 1 3 PC:28
 Memory: 2147483608 4 PC:24
 WriteBack: 0 0 PC:20
 ------------------------------------------------------------------------------------
 Cycle 10
-Fetch : Stalls
-Decode :    operation :blt Rd:12 Rs1:0 Rs2:5 imm:12 PC:32
-Execute: Not used
+Fetch: 11111111111100101000001010010011 PC:44
+Decode :    operation :addi Rd:5 Rs1:0 Rs2:12 imm:1 PC:36
+Execute: 44 12 PC:32
 Memory: 1 3 PC:28
 WriteBack: 4 0 PC:24
 ------------------------------------------------------------------------------------
 Cycle 11
-Fetch: 00000000000100000000001010010011 PC:36
-Decode :    operation :blt Rd:12 Rs1:1 Rs2:5 imm:12 PC:32
-Execute: Not used
-Memory: Not used
-WriteBack: 3 1 PC:28
-------------------------------------------------------------------------------------
-Cycle 12
-Fetch: 11111111111100101000001010010011 PC:44
-Decode :    operation :addi Rd:5 Rs1:0 Rs2:12 imm:1 PC:36
-Execute: 44 12 PC:32
-Memory: Not used
-WriteBack: Not used
-------------------------------------------------------------------------------------
-Cycle 13
-Fetch: 11111110000111111111000011101111 PC:48
-Decode :    operation :addi Rd:5 Rs1:5 Rs2:0 imm:-1 PC:44
-Execute: Not used
-Memory: 44 12 PC:32
-WriteBack: Not used
-------------------------------------------------------------------------------------
-Cycle 14
-Fetch: 00000000010100000000001000110011 PC:52
-Decode :    operation :jal Rd:1 Rs1:0 Rs2:12 imm:-32 PC:48
-Execute: 4 5 PC:44
-Memory: Not used
-WriteBack: 12 0 PC:32
-------------------------------------------------------------------------------------
-Cycle 15
-Fetch: 11111111100000010000000100010011 PC:16
-Decode :    operation :add Rd:4 Rs1:0 Rs2:4 imm:0 PC:52
-Execute: 52 1 PC:48
-Memory: 4 5 PC:44
-WriteBack: Not used
-------------------------------------------------------------------------------------
-Cycle 16
-Fetch: 00000000010100010010000000100011 PC:20
-Decode :    operation :addi Rd:2 Rs1:2147483604 Rs2:0 imm:-8 PC:16
-Execute: Not used
-Memory: 52 1 PC:48
-WriteBack: 5 4 PC:44
-------------------------------------------------------------------------------------
-Cycle 17
-Fetch: 00000000000100010010001000100011 PC:24
-Decode :    operation :sw Rd:0 Rs1:2147483596 Rs2:4 imm:0 PC:20
-Execute: 2147483596 2 PC:16
-Memory: Not used
-WriteBack: 1 52 PC:48
-------------------------------------------------------------------------------------
-Cycle 18
-Fetch: 00000000000100000000000110010011 PC:28
-Decode :    operation :sw Rd:4 Rs1:2147483596 Rs2:52 imm:4 PC:24
-Execute: 2147483596 0 PC:20
-Memory: 2147483596 2 PC:16
-WriteBack: Not used
-------------------------------------------------------------------------------------
-Cycle 19
-Fetch: 00000000010100011100011001100011 PC:32
-Decode :    operation :addi Rd:3 Rs1:0 Rs2:52 imm:1 PC:28
-Execute: 2147483600 4 PC:24
-Memory: 2147483596 0 PC:20
-WriteBack: 2 2147483596 PC:16
-------------------------------------------------------------------------------------
-Cycle 20
-Fetch : Stalls
-Decode :    operation :blt Rd:12 Rs1:1 Rs2:4 imm:12 PC:32
-Execute: 1 3 PC:28
-Memory: 2147483600 4 PC:24
-WriteBack: 0 0 PC:20
-------------------------------------------------------------------------------------
-Cycle 21
-Fetch : Stalls
-Decode :    operation :blt Rd:12 Rs1:1 Rs2:4 imm:12 PC:32
-Execute: Not used
-Memory: 1 3 PC:28
-WriteBack: 4 0 PC:24
-------------------------------------------------------------------------------------
-Cycle 22
-Fetch: 00000000000100000000001010010011 PC:36
-Decode :    operation :blt Rd:12 Rs1:1 Rs2:4 imm:12 PC:32
-Execute: Not used
-Memory: Not used
-WriteBack: 3 1 PC:28
-------------------------------------------------------------------------------------
-Cycle 23
-Fetch: 11111111111100101000001010010011 PC:44
-Decode :    operation :addi Rd:5 Rs1:0 Rs2:52 imm:1 PC:36
-Execute: 44 12 PC:32
-Memory: Not used
-WriteBack: Not used
-------------------------------------------------------------------------------------
-Cycle 24
-Fetch: 11111110000111111111000011101111 PC:48
-Decode :    operation :addi Rd:5 Rs1:4 Rs2:0 imm:-1 PC:44
-Execute: Not used
-Memory: 44 12 PC:32
-WriteBack: Not used
-------------------------------------------------------------------------------------
-Cycle 25
-Fetch: 00000000010100000000001000110011 PC:52
-Decode :    operation :jal Rd:1 Rs1:0 Rs2:52 imm:-32 PC:48
-Execute: 3 5 PC:44
-Memory: Not used
-WriteBack: 12 0 PC:32
-------------------------------------------------------------------------------------
-Cycle 26
-Fetch: 11111111100000010000000100010011 PC:16
-Decode :    operation :add Rd:4 Rs1:0 Rs2:3 imm:0 PC:52
-Execute: 52 1 PC:48
-Memory: 3 5 PC:44
-WriteBack: Not used
-------------------------------------------------------------------------------------
-Cycle 27
-Fetch: 00000000010100010010000000100011 PC:20
-Decode :    operation :addi Rd:2 Rs1:2147483596 Rs2:0 imm:-8 PC:16
-Execute: Not used
-Memory: 52 1 PC:48
-WriteBack: 5 3 PC:44
-------------------------------------------------------------------------------------
-Cycle 28
-Fetch: 00000000000100010010001000100011 PC:24
-Decode :    operation :sw Rd:0 Rs1:2147483588 Rs2:3 imm:0 PC:20
-Execute: 2147483588 2 PC:16
-Memory: Not used
-WriteBack: 1 52 PC:48
-------------------------------------------------------------------------------------
-Cycle 29
-Fetch: 00000000000100000000000110010011 PC:28
-Decode :    operation :sw Rd:4 Rs1:2147483588 Rs2:52 imm:4 PC:24
-Execute: 2147483588 0 PC:20
-Memory: 2147483588 2 PC:16
-WriteBack: Not used
-------------------------------------------------------------------------------------
-Cycle 30
-Fetch: 00000000010100011100011001100011 PC:32
-Decode :    operation :addi Rd:3 Rs1:0 Rs2:52 imm:1 PC:28
-Execute: 2147483592 4 PC:24
-Memory: 2147483588 0 PC:20
-WriteBack: 2 2147483588 PC:16
-------------------------------------------------------------------------------------
-Cycle 31
-Fetch : Stalls
-Decode :    operation :blt Rd:12 Rs1:1 Rs2:3 imm:12 PC:32
-Execute: 1 3 PC:28
-Memory: 2147483592 4 PC:24
-WriteBack: 0 0 PC:20
-------------------------------------------------------------------------------------
-Cycle 32
-Fetch : Stalls
-Decode :    operation :blt Rd:12 Rs1:1 Rs2:3 imm:12 PC:32
-Execute: Not used
-Memory: 1 3 PC:28
-WriteBack: 4 0 PC:24
-------------------------------------------------------------------------------------
-Cycle 33
-Fetch: 00000000000100000000001010010011 PC:36
-Decode :    operation :blt Rd:12 Rs1:1 Rs2:3 imm:12 PC:32
-Execute: Not used
-Memory: Not used
-WriteBack: 3 1 PC:28
-------------------------------------------------------------------------------------
-Cycle 34
-Fetch: 11111111111100101000001010010011 PC:44
-Decode :    operation :addi Rd:5 Rs1:0 Rs2:52 imm:1 PC:36
-Execute: 44 12 PC:32
-Memory: Not used
-WriteBack: Not used
-------------------------------------------------------------------------------------
-Cycle 35
-Fetch: 11111110000111111111000011101111 PC:48
-Decode :    operation :addi Rd:5 Rs1:3 Rs2:0 imm:-1 PC:44
-Execute: Not used
-Memory: 44 12 PC:32
-WriteBack: Not used
-------------------------------------------------------------------------------------
-Cycle 36
-Fetch: 00000000010100000000001000110011 PC:52
-Decode :    operation :jal Rd:1 Rs1:0 Rs2:52 imm:-32 PC:48
-Execute: 2 5 PC:44
-Memory: Not used
-WriteBack: 12 0 PC:32
-------------------------------------------------------------------------------------
-Cycle 37
-Fetch: 11111111100000010000000100010011 PC:16
-Decode :    operation :add Rd:4 Rs1:0 Rs2:2 imm:0 PC:52
-Execute: 52 1 PC:48
-Memory: 2 5 PC:44
-WriteBack: Not used
-------------------------------------------------------------------------------------
-Cycle 38
-Fetch: 00000000010100010010000000100011 PC:20
-Decode :    operation :addi Rd:2 Rs1:2147483588 Rs2:0 imm:-8 PC:16
-Execute: Not used
-Memory: 52 1 PC:48
-WriteBack: 5 2 PC:44
-------------------------------------------------------------------------------------
-Cycle 39
-Fetch: 00000000000100010010001000100011 PC:24
-Decode :    operation :sw Rd:0 Rs1:2147483580 Rs2:2 imm:0 PC:20
-Execute: 2147483580 2 PC:16
-Memory: Not used
-WriteBack: 1 52 PC:48
-------------------------------------------------------------------------------------
-Cycle 40
-Fetch: 00000000000100000000000110010011 PC:28
-Decode :    operation :sw Rd:4 Rs1:2147483580 Rs2:52 imm:4 PC:24
-Execute: 2147483580 0 PC:20
-Memory: 2147483580 2 PC:16
-WriteBack: Not used
-------------------------------------------------------------------------------------
-Cycle 41
-Fetch: 00000000010100011100011001100011 PC:32
-Decode :    operation :addi Rd:3 Rs1:0 Rs2:52 imm:1 PC:28
-Execute: 2147483584 4 PC:24
-Memory: 2147483580 0 PC:20
-WriteBack: 2 2147483580 PC:16
-------------------------------------------------------------------------------------
-Cycle 42
-Fetch : Stalls
-Decode :    operation :blt Rd:12 Rs1:1 Rs2:2 imm:12 PC:32
-Execute: 1 3 PC:28
-Memory: 2147483584 4 PC:24
-WriteBack: 0 0 PC:20
-------------------------------------------------------------------------------------
-Cycle 43
-Fetch : Stalls
-Decode :    operation :blt Rd:12 Rs1:1 Rs2:2 imm:12 PC:32
-Execute: Not used
-Memory: 1 3 PC:28
-WriteBack: 4 0 PC:24
-------------------------------------------------------------------------------------
-Cycle 44
-Fetch: 00000000000100000000001010010011 PC:36
-Decode :    operation :blt Rd:12 Rs1:1 Rs2:2 imm:12 PC:32
-Execute: Not used
-Memory: Not used
-WriteBack: 3 1 PC:28
-------------------------------------------------------------------------------------
-Cycle 45
-Fetch: 11111111111100101000001010010011 PC:44
-Decode :    operation :addi Rd:5 Rs1:0 Rs2:52 imm:1 PC:36
-Execute: 44 12 PC:32
-Memory: Not used
-WriteBack: Not used
-------------------------------------------------------------------------------------
-Cycle 46
 Fetch: 11111110000111111111000011101111 PC:48
 Decode :    operation :addi Rd:5 Rs1:2 Rs2:0 imm:-1 PC:44
 Execute: Not used
 Memory: 44 12 PC:32
-WriteBack: Not used
+WriteBack: 3 1 PC:28
 ------------------------------------------------------------------------------------
-Cycle 47
+Cycle 12
 Fetch: 00000000010100000000001000110011 PC:52
-Decode :    operation :jal Rd:1 Rs1:0 Rs2:52 imm:-32 PC:48
+Decode :    operation :jal Rd:1 Rs1:0 Rs2:12 imm:-32 PC:48
 Execute: 1 5 PC:44
 Memory: Not used
 WriteBack: 12 0 PC:32
 ------------------------------------------------------------------------------------
-Cycle 48
+Cycle 13
 Fetch: 11111111100000010000000100010011 PC:16
 Decode :    operation :add Rd:4 Rs1:0 Rs2:1 imm:0 PC:52
 Execute: 52 1 PC:48
 Memory: 1 5 PC:44
 WriteBack: Not used
 ------------------------------------------------------------------------------------
-Cycle 49
+Cycle 14
 Fetch: 00000000010100010010000000100011 PC:20
-Decode :    operation :addi Rd:2 Rs1:2147483580 Rs2:0 imm:-8 PC:16
+Decode :    operation :addi Rd:2 Rs1:2147483604 Rs2:0 imm:-8 PC:16
 Execute: Not used
 Memory: 52 1 PC:48
 WriteBack: 5 1 PC:44
 ------------------------------------------------------------------------------------
-Cycle 50
+Cycle 15
 Fetch: 00000000000100010010001000100011 PC:24
-Decode :    operation :sw Rd:0 Rs1:2147483572 Rs2:1 imm:0 PC:20
-Execute: 2147483572 2 PC:16
+Decode :    operation :sw Rd:0 Rs1:2147483596 Rs2:1 imm:0 PC:20
+Execute: 2147483596 2 PC:16
 Memory: Not used
 WriteBack: 1 52 PC:48
 ------------------------------------------------------------------------------------
-Cycle 51
+Cycle 16
 Fetch: 00000000000100000000000110010011 PC:28
-Decode :    operation :sw Rd:4 Rs1:2147483572 Rs2:52 imm:4 PC:24
-Execute: 2147483572 0 PC:20
-Memory: 2147483572 2 PC:16
+Decode :    operation :sw Rd:4 Rs1:2147483596 Rs2:52 imm:4 PC:24
+Execute: 2147483596 0 PC:20
+Memory: 2147483596 2 PC:16
 WriteBack: Not used
 ------------------------------------------------------------------------------------
-Cycle 52
+Cycle 17
 Fetch: 00000000010100011100011001100011 PC:32
 Decode :    operation :addi Rd:3 Rs1:0 Rs2:52 imm:1 PC:28
-Execute: 2147483576 4 PC:24
-Memory: 2147483572 0 PC:20
-WriteBack: 2 2147483572 PC:16
+Execute: 2147483600 4 PC:24
+Memory: 2147483596 0 PC:20
+WriteBack: 2 2147483596 PC:16
 ------------------------------------------------------------------------------------
-Cycle 53
-Fetch : Stalls
+Cycle 18
+Fetch: 11111111111100101000001010010011 PC:44
 Decode :    operation :blt Rd:12 Rs1:1 Rs2:1 imm:12 PC:32
 Execute: 1 3 PC:28
-Memory: 2147483576 4 PC:24
+Memory: 2147483600 4 PC:24
 WriteBack: 0 0 PC:20
 ------------------------------------------------------------------------------------
-Cycle 54
-Fetch : Stalls
-Decode :    operation :blt Rd:12 Rs1:1 Rs2:1 imm:12 PC:32
-Execute: Not used
+Cycle 19
+Fetch: 00000000000100000000001010010011 PC:36
+Decode :    operation :addi Rd:5 Rs1:1 Rs2:0 imm:-1 PC:44
+Execute: -18398576 12 PC:32
 Memory: 1 3 PC:28
 WriteBack: 4 0 PC:24
 ------------------------------------------------------------------------------------
-Cycle 55
-Fetch: 00000000000100000000001010010011 PC:36
-Decode :    operation :blt Rd:12 Rs1:1 Rs2:1 imm:12 PC:32
-Execute: Not used
-Memory: Not used
-WriteBack: 3 1 PC:28
-------------------------------------------------------------------------------------
-Cycle 56
+Cycle 20
 Fetch: 00000000000000001000000001100111 PC:40
 Decode :    operation :addi Rd:5 Rs1:0 Rs2:52 imm:1 PC:36
-Execute: 1 12 PC:32
-Memory: Not used
-WriteBack: Not used
+Execute: Not used
+Memory: -18398576 12 PC:32
+WriteBack: 3 1 PC:28
 ------------------------------------------------------------------------------------
-Cycle 57
+Cycle 21
 Fetch: 11111111111100101000001010010011 PC:44
 Decode :    operation :jalr Rd:0 Rs1:52 Rs2:0 imm:0 PC:40
 Execute: 1 5 PC:36
-Memory: 1 12 PC:32
-WriteBack: Not used
+Memory: Not used
+WriteBack: 12 0 PC:32
 ------------------------------------------------------------------------------------
-Cycle 58
+Cycle 22
 Fetch: 00000000010100000000001000110011 PC:52
 Decode :    operation :addi Rd:5 Rs1:1 Rs2:0 imm:-1 PC:44
 Execute: 44 0 PC:40
 Memory: 1 5 PC:36
-WriteBack: 12 0 PC:32
+WriteBack: Not used
 ------------------------------------------------------------------------------------
-Cycle 59
+Cycle 23
 Fetch: 00000000000000010010001010000011 PC:56
 Decode :    operation :add Rd:4 Rs1:0 Rs2:1 imm:0 PC:52
 Execute: Not used
 Memory: 44 0 PC:40
 WriteBack: 5 1 PC:36
 ------------------------------------------------------------------------------------
-Cycle 60
+Cycle 24
 Fetch: 00000000010000010010000010000011 PC:60
-Decode :    operation :lw Rd:5 Rs1:2147483572 Rs2:0 imm:0 PC:56
+Decode :    operation :lw Rd:5 Rs1:2147483596 Rs2:0 imm:0 PC:56
 Execute: 1 4 PC:52
 Memory: Not used
 WriteBack: 0 0 PC:40
 ------------------------------------------------------------------------------------
-Cycle 61
+Cycle 25
 Fetch: 00000000100000010000000100010011 PC:64
-Decode :    operation :lw Rd:1 Rs1:2147483572 Rs2:1 imm:4 PC:60
-Execute: 2147483572 5 PC:56
+Decode :    operation :lw Rd:1 Rs1:2147483596 Rs2:1 imm:4 PC:60
+Execute: 2147483596 5 PC:56
 Memory: 1 4 PC:52
 WriteBack: Not used
 ------------------------------------------------------------------------------------
-Cycle 62
+Cycle 26
 Fetch: 00000010010000101000001010110011 PC:68
-Decode :    operation :addi Rd:2 Rs1:2147483572 Rs2:0 imm:8 PC:64
-Execute: 2147483576 1 PC:60
-Memory: 2147483572 5 PC:56
+Decode :    operation :addi Rd:2 Rs1:2147483596 Rs2:0 imm:8 PC:64
+Execute: 2147483600 1 PC:60
+Memory: 2147483596 5 PC:56
 WriteBack: 4 1 PC:52
 ------------------------------------------------------------------------------------
-Cycle 63
+Cycle 27
 Fetch: 00000000000000001000000001100111 PC:72
 Decode :    operation :mul Rd:5 Rs1:1 Rs2:1 imm:0 PC:68
-Execute: 2147483580 2 PC:64
-Memory: 2147483576 1 PC:60
+Execute: 2147483604 2 PC:64
+Memory: 2147483600 1 PC:60
 WriteBack: 5 1 PC:56
 ------------------------------------------------------------------------------------
-Cycle 64
+Cycle 28
 Fetch: Not Used
 Decode :    operation :jalr Rd:0 Rs1:52 Rs2:0 imm:0 PC:72
 Execute: 1 5 PC:68
-Memory: 2147483580 2 PC:64
+Memory: 2147483604 2 PC:64
 WriteBack: 1 52 PC:60
 ------------------------------------------------------------------------------------
-Cycle 65
+Cycle 29
 Fetch: 00000000010100000000001000110011 PC:52
  Decode : Not Used
 Execute: 76 0 PC:72
 Memory: 1 5 PC:68
-WriteBack: 2 2147483580 PC:64
+WriteBack: 2 2147483604 PC:64
 ------------------------------------------------------------------------------------
-Cycle 66
+Cycle 30
 Fetch: 00000000000000010010001010000011 PC:56
 Decode :    operation :add Rd:4 Rs1:0 Rs2:1 imm:0 PC:52
 Execute: Not used
 Memory: 76 0 PC:72
 WriteBack: 5 1 PC:68
 ------------------------------------------------------------------------------------
-Cycle 67
+Cycle 31
 Fetch: 00000000010000010010000010000011 PC:60
-Decode :    operation :lw Rd:5 Rs1:2147483580 Rs2:0 imm:0 PC:56
+Decode :    operation :lw Rd:5 Rs1:2147483604 Rs2:0 imm:0 PC:56
 Execute: 1 4 PC:52
 Memory: Not used
 WriteBack: 0 0 PC:72
 ------------------------------------------------------------------------------------
-Cycle 68
+Cycle 32
 Fetch: 00000000100000010000000100010011 PC:64
-Decode :    operation :lw Rd:1 Rs1:2147483580 Rs2:1 imm:4 PC:60
-Execute: 2147483580 5 PC:56
+Decode :    operation :lw Rd:1 Rs1:2147483604 Rs2:1 imm:4 PC:60
+Execute: 2147483604 5 PC:56
 Memory: 1 4 PC:52
 WriteBack: Not used
 ------------------------------------------------------------------------------------
-Cycle 69
-Fetch: 00000010010000101000001010110011 PC:68
-Decode :    operation :addi Rd:2 Rs1:2147483580 Rs2:0 imm:8 PC:64
-Execute: 2147483584 1 PC:60
-Memory: 2147483580 5 PC:56
-WriteBack: 4 1 PC:52
-------------------------------------------------------------------------------------
-Cycle 70
-Fetch: 00000000000000001000000001100111 PC:72
-Decode :    operation :mul Rd:5 Rs1:2 Rs2:1 imm:0 PC:68
-Execute: 2147483588 2 PC:64
-Memory: 2147483584 1 PC:60
-WriteBack: 5 2 PC:56
-------------------------------------------------------------------------------------
-Cycle 71
-Fetch: Not Used
-Decode :    operation :jalr Rd:0 Rs1:52 Rs2:0 imm:0 PC:72
-Execute: 2 5 PC:68
-Memory: 2147483588 2 PC:64
-WriteBack: 1 52 PC:60
-------------------------------------------------------------------------------------
-Cycle 72
-Fetch: 00000000010100000000001000110011 PC:52
- Decode : Not Used
-Execute: 76 0 PC:72
-Memory: 2 5 PC:68
-WriteBack: 2 2147483588 PC:64
-------------------------------------------------------------------------------------
-Cycle 73
-Fetch: 00000000000000010010001010000011 PC:56
-Decode :    operation :add Rd:4 Rs1:0 Rs2:2 imm:0 PC:52
-Execute: Not used
-Memory: 76 0 PC:72
-WriteBack: 5 2 PC:68
-------------------------------------------------------------------------------------
-Cycle 74
-Fetch: 00000000010000010010000010000011 PC:60
-Decode :    operation :lw Rd:5 Rs1:2147483588 Rs2:0 imm:0 PC:56
-Execute: 2 4 PC:52
-Memory: Not used
-WriteBack: 0 0 PC:72
-------------------------------------------------------------------------------------
-Cycle 75
-Fetch: 00000000100000010000000100010011 PC:64
-Decode :    operation :lw Rd:1 Rs1:2147483588 Rs2:2 imm:4 PC:60
-Execute: 2147483588 5 PC:56
-Memory: 2 4 PC:52
-WriteBack: Not used
-------------------------------------------------------------------------------------
-Cycle 76
-Fetch: 00000010010000101000001010110011 PC:68
-Decode :    operation :addi Rd:2 Rs1:2147483588 Rs2:0 imm:8 PC:64
-Execute: 2147483592 1 PC:60
-Memory: 2147483588 5 PC:56
-WriteBack: 4 2 PC:52
-------------------------------------------------------------------------------------
-Cycle 77
-Fetch: 00000000000000001000000001100111 PC:72
-Decode :    operation :mul Rd:5 Rs1:3 Rs2:2 imm:0 PC:68
-Execute: 2147483596 2 PC:64
-Memory: 2147483592 1 PC:60
-WriteBack: 5 3 PC:56
-------------------------------------------------------------------------------------
-Cycle 78
-Fetch: Not Used
-Decode :    operation :jalr Rd:0 Rs1:52 Rs2:0 imm:0 PC:72
-Execute: 6 5 PC:68
-Memory: 2147483596 2 PC:64
-WriteBack: 1 52 PC:60
-------------------------------------------------------------------------------------
-Cycle 79
-Fetch: 00000000010100000000001000110011 PC:52
- Decode : Not Used
-Execute: 76 0 PC:72
-Memory: 6 5 PC:68
-WriteBack: 2 2147483596 PC:64
-------------------------------------------------------------------------------------
-Cycle 80
-Fetch: 00000000000000010010001010000011 PC:56
-Decode :    operation :add Rd:4 Rs1:0 Rs2:6 imm:0 PC:52
-Execute: Not used
-Memory: 76 0 PC:72
-WriteBack: 5 6 PC:68
-------------------------------------------------------------------------------------
-Cycle 81
-Fetch: 00000000010000010010000010000011 PC:60
-Decode :    operation :lw Rd:5 Rs1:2147483596 Rs2:0 imm:0 PC:56
-Execute: 6 4 PC:52
-Memory: Not used
-WriteBack: 0 0 PC:72
-------------------------------------------------------------------------------------
-Cycle 82
-Fetch: 00000000100000010000000100010011 PC:64
-Decode :    operation :lw Rd:1 Rs1:2147483596 Rs2:6 imm:4 PC:60
-Execute: 2147483596 5 PC:56
-Memory: 6 4 PC:52
-WriteBack: Not used
-------------------------------------------------------------------------------------
-Cycle 83
-Fetch: 00000010010000101000001010110011 PC:68
-Decode :    operation :addi Rd:2 Rs1:2147483596 Rs2:0 imm:8 PC:64
-Execute: 2147483600 1 PC:60
-Memory: 2147483596 5 PC:56
-WriteBack: 4 6 PC:52
-------------------------------------------------------------------------------------
-Cycle 84
-Fetch: 00000000000000001000000001100111 PC:72
-Decode :    operation :mul Rd:5 Rs1:4 Rs2:6 imm:0 PC:68
-Execute: 2147483604 2 PC:64
-Memory: 2147483600 1 PC:60
-WriteBack: 5 4 PC:56
-------------------------------------------------------------------------------------
-Cycle 85
-Fetch: Not Used
-Decode :    operation :jalr Rd:0 Rs1:52 Rs2:0 imm:0 PC:72
-Execute: 24 5 PC:68
-Memory: 2147483604 2 PC:64
-WriteBack: 1 52 PC:60
-------------------------------------------------------------------------------------
-Cycle 86
-Fetch: 00000000010100000000001000110011 PC:52
- Decode : Not Used
-Execute: 76 0 PC:72
-Memory: 24 5 PC:68
-WriteBack: 2 2147483604 PC:64
-------------------------------------------------------------------------------------
-Cycle 87
-Fetch: 00000000000000010010001010000011 PC:56
-Decode :    operation :add Rd:4 Rs1:0 Rs2:24 imm:0 PC:52
-Execute: Not used
-Memory: 76 0 PC:72
-WriteBack: 5 24 PC:68
-------------------------------------------------------------------------------------
-Cycle 88
-Fetch: 00000000010000010010000010000011 PC:60
-Decode :    operation :lw Rd:5 Rs1:2147483604 Rs2:0 imm:0 PC:56
-Execute: 24 4 PC:52
-Memory: Not used
-WriteBack: 0 0 PC:72
-------------------------------------------------------------------------------------
-Cycle 89
-Fetch: 00000000100000010000000100010011 PC:64
-Decode :    operation :lw Rd:1 Rs1:2147483604 Rs2:24 imm:4 PC:60
-Execute: 2147483604 5 PC:56
-Memory: 24 4 PC:52
-WriteBack: Not used
-------------------------------------------------------------------------------------
-Cycle 90
+Cycle 33
 Fetch: 00000010010000101000001010110011 PC:68
 Decode :    operation :addi Rd:2 Rs1:2147483604 Rs2:0 imm:8 PC:64
 Execute: 2147483608 1 PC:60
 Memory: 2147483604 5 PC:56
-WriteBack: 4 24 PC:52
+WriteBack: 4 1 PC:52
 ------------------------------------------------------------------------------------
-Cycle 91
+Cycle 34
 Fetch: 00000000000000001000000001100111 PC:72
-Decode :    operation :mul Rd:5 Rs1:5 Rs2:24 imm:0 PC:68
+Decode :    operation :mul Rd:5 Rs1:2 Rs2:1 imm:0 PC:68
 Execute: 2147483612 2 PC:64
 Memory: 2147483608 1 PC:60
-WriteBack: 5 5 PC:56
+WriteBack: 5 2 PC:56
 ------------------------------------------------------------------------------------
-Cycle 92
-Fetch: Not Used
+Cycle 35
+Fetch: 00000000010100000000001000110011 PC:52
 Decode :    operation :jalr Rd:0 Rs1:12 Rs2:0 imm:0 PC:72
-Execute: 120 5 PC:68
+Execute: 2 5 PC:68
 Memory: 2147483612 2 PC:64
 WriteBack: 1 12 PC:60
 ------------------------------------------------------------------------------------
-Cycle 93
-Fetch: 00000100000000000000000001100011 PC:12
- Decode : Not Used
+Cycle 36
+Fetch: 00000000000000010010001010000011 PC:56
+Decode :    operation :add Rd:4 Rs1:0 Rs2:2 imm:0 PC:52
 Execute: 76 0 PC:72
-Memory: 120 5 PC:68
+Memory: 2 5 PC:68
 WriteBack: 2 2147483612 PC:64
 ------------------------------------------------------------------------------------
-Cycle 94
-Fetch: 11111111100000010000000100010011 PC:16
-Decode :    operation :beq Rd:0 Rs1:0 Rs2:0 imm:64 PC:12
-Execute: Not used
+Cycle 37
+Fetch: 00000000010000010010000010000011 PC:60
+Decode :    operation :lw Rd:5 Rs1:2147483612 Rs2:0 imm:0 PC:56
+Execute: 2 4 PC:52
 Memory: 76 0 PC:72
-WriteBack: 5 120 PC:68
+WriteBack: 5 2 PC:68
 ------------------------------------------------------------------------------------
-Cycle 95
-Fetch: Not Used
-Decode :    operation :addi Rd:2 Rs1:2147483612 Rs2:0 imm:-8 PC:16
-Execute: 76 0 PC:12
-Memory: Not used
+Cycle 38
+Fetch: 00000000100000010000000100010011 PC:64
+Decode :    operation :lw Rd:1 Rs1:2147483612 Rs2:2 imm:4 PC:60
+Execute: 2147483612 5 PC:56
+Memory: 2 4 PC:52
 WriteBack: 0 0 PC:72
 ------------------------------------------------------------------------------------
-Cycle 96
+Cycle 39
+Fetch: 00000010010000101000001010110011 PC:68
+Decode :    operation :addi Rd:2 Rs1:2147483612 Rs2:0 imm:8 PC:64
+Execute: 2147483616 1 PC:60
+Memory: 2147483612 5 PC:56
+WriteBack: 4 2 PC:52
+------------------------------------------------------------------------------------
+Cycle 40
+Fetch: 00000000000000001000000001100111 PC:72
+Decode :    operation :mul Rd:5 Rs1:0 Rs2:2 imm:0 PC:68
+Execute: 2147483620 2 PC:64
+Memory: 2147483616 1 PC:60
+WriteBack: 5 0 PC:56
+------------------------------------------------------------------------------------
+Cycle 41
+Fetch: 00000100000000000000000001100011 PC:12
+Decode :    operation :jalr Rd:0 Rs1:0 Rs2:0 imm:0 PC:72
+Execute: 0 5 PC:68
+Memory: 2147483620 2 PC:64
+WriteBack: 1 0 PC:60
+------------------------------------------------------------------------------------
+Cycle 42
+Fetch: 11111111100000010000000100010011 PC:16
+Decode :    operation :beq Rd:0 Rs1:0 Rs2:0 imm:64 PC:12
+Execute: 76 0 PC:72
+Memory: 0 5 PC:68
+WriteBack: 2 2147483620 PC:64
+------------------------------------------------------------------------------------
+Cycle 43
+Fetch: Not Used
+Decode :    operation :addi Rd:2 Rs1:2147483620 Rs2:0 imm:-8 PC:16
+Execute: 76 0 PC:12
+Memory: 76 0 PC:72
+WriteBack: 5 0 PC:68
+------------------------------------------------------------------------------------
+Cycle 44
 Fetch: Not Used
  Decode : Not Used
 Execute: Not used
 Memory: 76 0 PC:12
-WriteBack: Not used
+WriteBack: 0 0 PC:72
 ------------------------------------------------------------------------------------
-Cycle 97
+Cycle 45
 Fetch: Not Used
  Decode : Not Used
 Execute: Not used
 Memory: Not used
 WriteBack: 0 0 PC:12
 ------------------------------------------------------------------------------------
-Total Cycles: 98
+Total Cycles: 46
+76

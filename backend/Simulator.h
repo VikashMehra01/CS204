@@ -18,11 +18,10 @@ struct IF_ID
     int PC = 0;
     bool null = true;
 };
-
 struct I_DATA
 {
     string i_type;
-    string opperation;
+    string operation;
     int rd;
     int rs1;
     int rs2;
@@ -33,7 +32,6 @@ struct I_DATA
     int PC;
     bool null = true;
 };
-
 struct EX_DATA
 {
     int EX;
@@ -43,10 +41,9 @@ struct EX_DATA
     int immi;
     int PC;
     string i_type;
-    string opperation;
+    string operation;
     bool null = true;
 };
-
 struct MEMORY_DATA
 {
     int EX = 0;
@@ -77,19 +74,22 @@ private:
     /* data */
     int PC = 0x0;
     bool DataForwarding = true;
-    bool isBranch = false;
+    bool flushing = false;
     int stalls = 0;
     bool stall_installed = false;
     int limit_pc;
-    bool branch_prediction = false;
+    bool branch_prediction = true;
+    int temp_PC = 0;
 
     I_DATA Data;
     MEMORY_DATA MEM;
     EX_DATA EX;
     IF_ID IR;
 
+    unordered_map<int, int> BPB;
+    unordered_map<int, bool> BPT;
+
     unordered_map<int, string> PC_MAP;
-    // unordered_map<int, int> Memory;
     unordered_map<int, long long int> Register{
         {0, 0},
         {1, 0},
@@ -194,7 +194,6 @@ private:
         {"1100111", true},
         {"0110111", false},
         {"0010111", false}};
-
     unordered_map<string, bool> opp_fun7 = {
         {"0110011", true},
         {"0010011", false},
@@ -216,7 +215,6 @@ private:
         {"0110111", false}, // U-type
         {"0010111", false}  // U-type
     };
-
     unordered_map<string, bool> is_rs1 = {
         {"0110011", true},
         {"0010011", true},
@@ -260,10 +258,11 @@ public:
         else
         {
             // Forwarding-enabled logic: Stall only for load-use hazards
-            if(current.rs1_reg != 0){
-                if(!Data.null && current.rs1_reg == Data.rd)
+            if (current.rs1_reg != 0)
+            {
+                if (!Data.null && current.rs1_reg == Data.rd)
                 {
-                    if(Data.i_type == "0000011" || (current.i_type == "1100011" && !branch_prediction))
+                    if (Data.i_type == "0000011" || (current.i_type == "1100011" && !branch_prediction))
                     {
                         stallneeded = 1;
                         stall_installed = true;
@@ -273,26 +272,27 @@ public:
                         current.rs1 = Data.EX;
                     }
                 }
-                else if (!EX.null && EX.rd == current.rs1_reg )
+                else if (!EX.null && EX.rd == current.rs1_reg)
                 {
                     // Load-use hazard: EX stage is a load, result not ready yet
-                    if(EX.i_type == "0000011" || (current.i_type == "1100011" && !branch_prediction) ) 
+                    if (EX.i_type == "0000011" || (current.i_type == "1100011" && !branch_prediction))
                     {
                         stallneeded = 1;
                         stall_installed = true;
-
-                    }else
+                    }
+                    else
                     {
                         current.rs1 = EX.EX;
                     }
                 }
             }
 
-            if(current.rs2_reg != 0){
+            if (current.rs2_reg != 0)
+            {
 
-                if(!Data.null && current.rs2_reg == Data.rd)
+                if (!Data.null && current.rs2_reg == Data.rd)
                 {
-                    if(Data.i_type == "0000011" || (current.i_type == "1100011" && branch_prediction))
+                    if (Data.i_type == "0000011" || (current.i_type == "1100011" && branch_prediction))
                     {
                         stallneeded = 1;
                         stall_installed = true;
@@ -303,7 +303,7 @@ public:
                     }
                 }
 
-                else if(!EX.null && EX.rd == current.rs2_reg)
+                else if (!EX.null && EX.rd == current.rs2_reg)
                 {
                     if (EX.i_type == "0000011" || (current.i_type == "1100011" && branch_prediction))
                     {
@@ -339,11 +339,35 @@ public:
         {
             return IR;
         }
+        if (PC_MAP.find(PC) == PC_MAP.end())
+        {
+            cout << "Error: PC not found in instruction map." << endl;
+            return IR;
+        }
 
         IR.IR = PC_MAP[PC];
         IR.PC = PC;
         IR.null = false;
-        PC += 4;
+
+        // check if for Branch Instructions
+        if (BPB.find(PC) != BPB.end())
+        {
+            // Check if the branch prediction table has a prediction for this PC
+            if (BPT[PC] == true)
+            {
+                PC = BPB[PC];
+            }
+            else
+            {
+                PC += 4;
+            }
+        }
+        // not branch
+        else
+        {
+            PC += 4;
+        }
+
         return IR;
     }
 
@@ -400,7 +424,7 @@ public:
         }
 
         data.i_type = opcode;
-        data.opperation = operation[{opcode, fun3, fun7}];
+        data.operation = operation[{opcode, fun3, fun7}];
 
         data.rd = stoi(rd, 0, 2);
         data.rs1_reg = stoi(rs1, 0, 2);
@@ -433,7 +457,7 @@ public:
             return EX_data;
         }
 
-        string operation = data.opperation;
+        string operation = data.operation;
         if (operation == "add")
         {
             EX_data.EX = data.rs1 + data.rs2;
@@ -513,61 +537,209 @@ public:
             int shift_amount = data.immi & 0x1F;
             EX_data.EX = data.rs1 >> shift_amount; // Arithmetic shift (C++ behavior for signed int)
         }
+
         // Branch instruction
         else if (operation == "beq")
         {
 
             if (data.rs1 == data.rs2)
             {
-                PC = data.PC + data.immi;
-                EX_data.EX = PC;
-                isBranch = true;
-                cout << PC << endl;
+                BPB[data.PC] = data.PC + data.immi;
+                EX_data.EX = BPB[data.PC];
+                // branch prediction
+
+                if (BPT[data.PC] == true)
+                {
+                    // Correct prediction
+                }
+                else if (BPT[data.PC] == false)
+                {
+                    PC = BPB[data.PC];
+                    BPT[data.PC] = true;
+                    flushing = true;
+                }
+            }
+            else
+            {
+                if (BPT[data.PC] == false)
+                {
+                    // Correct prediction
+                }
+                else
+                {
+                    // Incorrect prediction
+                    PC = data.PC + 4;
+                    BPT[data.PC] = false;
+                    flushing = true;
+                }
             }
         }
         else if (operation == "bne")
         {
             if (data.rs1 != data.rs2)
             {
-                PC = data.PC + data.immi;
-                EX_data.EX = PC;
-                isBranch = true;
+                BPB[data.PC] = data.PC + data.immi;
+                EX_data.EX = BPB[data.PC];
+                // branch prediction
+                if (BPT[data.PC] == true)
+                {
+                    // Correct prediction
+                }
+                else
+                {
+                    PC = BPB[data.PC];
+                    BPT[data.PC] = true;
+                    flushing = true;
+                }
+            }
+            else
+            {
+                if (BPT[data.PC] == false)
+                {
+                    // Correct prediction
+                }
+                else
+                {
+                    // Incorrect prediction
+                    PC = data.PC + 4;
+                    BPT[data.PC] = false;
+                    flushing = true;
+                }
             }
         }
         else if (operation == "blt")
         {
             if (data.rs1 < data.rs2)
             {
-                PC = data.PC + data.immi;
-                EX_data.EX = PC;
-                isBranch = true;
+
+                BPB[data.PC] = data.PC + data.immi;
+                EX_data.EX = BPB[data.PC];
+                // branch prediction
+                if (BPT[data.PC] == true)
+                {
+                    // Correct prediction
+                }
+                else
+                {
+                    PC = BPB[data.PC];
+                    BPT[data.PC] = true;
+                    flushing = true;
+                }
+            }
+            else
+            {
+                if (BPT[data.PC] == false)
+                {
+                    // Correct prediction
+                }
+                else
+                {
+                    // Incorrect prediction
+                    PC = data.PC + 4;
+                    BPT[data.PC] = false;
+                    flushing = true;
+                }
             }
         }
         else if (operation == "bge")
         {
             if (data.rs1 >= data.rs2)
             {
-                PC = data.PC + data.immi;
-                EX_data.EX = PC;
-                isBranch = true;
+                BPB[data.PC] = data.PC + data.immi;
+                EX_data.EX = BPB[data.PC];
+                // branch prediction
+                if (BPT[data.PC] == true)
+                {
+                    // Correct prediction
+                }
+                else
+                {
+                    PC = BPB[data.PC];
+                    BPT[data.PC] = true;
+                    flushing = true;
+                }
+            }
+            else
+            {
+                if (BPT[data.PC] == false)
+                {
+                    // Correct prediction
+                }
+                else
+                {
+                    // Incorrect prediction
+                    PC = data.PC + 4;
+                    BPT[data.PC] = false;
+                    flushing = true;
+                }
             }
         }
         else if (operation == "bltu")
         {
             if (data.rs1 < data.rs2)
             {
-                PC = data.PC + data.immi;
-                EX_data.EX = PC;
-                isBranch = true;
+
+                BPB[data.PC] = data.PC + data.immi;
+                EX_data.EX = BPB[data.PC];
+                // branch prediction
+                if (BPT[data.PC] == true)
+                {
+                    // Correct prediction
+                }
+                else
+                {
+                    PC = BPB[data.PC];
+                    BPT[data.PC] = true;
+                    flushing = true;
+                }
+            }
+            else
+            {
+                if (BPT[data.PC] == false)
+                {
+                    // Correct prediction
+                }
+                else
+                {
+                    // Incorrect prediction
+                    PC = data.PC + 4;
+                    BPT[data.PC] = false;
+                    flushing = true;
+                }
             }
         }
         else if (operation == "bgeu")
         {
             if (data.rs1 >= data.rs2)
             {
-                PC = data.PC + data.immi;
-                EX_data.EX = PC;
-                isBranch = true;
+
+                BPB[data.PC] = data.PC + data.immi;
+                EX_data.EX = BPB[data.PC];
+                // branch prediction
+                if (BPT[data.PC] == true)
+                {
+                    // Correct prediction
+                }
+                else
+                {
+                    PC = BPB[data.PC];
+                    BPT[data.PC] = true;
+                    flushing = true;
+                }
+            }
+            else
+            {
+                if (BPT[data.PC] == false)
+                {
+                    // Correct prediction
+                }
+                else
+                {
+                    // Incorrect prediction
+                    PC = data.PC + 4;
+                    BPT[data.PC] = false;
+                    flushing = true;
+                }
             }
         }
         // store instruction
@@ -608,14 +780,32 @@ public:
         else if (operation == "jal")
         {
             EX_data.EX = data.PC + 4;
-            PC = data.PC + data.immi;
-            isBranch = true;
+            BPB[data.PC] = data.PC + data.immi;
+            if (BPT[data.PC] == true)
+            {
+                // Correct prediction
+            }
+            else
+            {
+                PC = BPB[data.PC];
+                BPT[data.PC] = true;
+                flushing = true;
+            }
         }
         else if (operation == "jalr")
         {
             EX_data.EX = data.PC + 4;
-            isBranch = true;
-            PC = data.rs1 + data.immi;
+            BPB[data.PC] = data.rs1 + data.immi;
+            if (BPT[data.PC] == true)
+            {
+                // Correct prediction
+            }
+            else
+            {
+                PC = BPB[data.PC];
+                BPT[data.PC] = true;
+                flushing = true;
+            }
         }
 
         else if (operation == "lui")
@@ -636,14 +826,29 @@ public:
         }
 
         EX_data.rd = data.rd;
-        EX_data.opperation = operation;
+        EX_data.operation = operation;
         EX_data.rs1 = data.rs1;
         EX_data.rs2 = data.rs2;
         EX_data.immi = data.immi;
         EX_data.i_type = data.i_type;
         EX_data.null = false;
         EX_data.PC = data.PC;
-        Data.EX=EX_data.EX;
+        Data.EX = EX_data.EX;
+        // if (data.i_type == "1100011")
+        // {
+        //     // Branch instruction
+        //     BPB[data.PC] = data.PC + data.immi;
+        // }
+        // if (data.i_type == "1101111")
+        // {
+        //     // JAL instruction
+        //     BPB[data.PC] = data.PC + data.immi;
+        // }
+        // if (data.i_type == "1100111")
+        // {
+        //     // JALR instruction
+        //     BPB[data.PC] = data.rs1 + data.immi;
+        // }
         return EX_data;
     }
 
@@ -663,7 +868,7 @@ public:
         if (EX.i_type == "0100011")
         {
             int val = EX.rs2;
-            string curr = EX.opperation;
+            string curr = EX.operation;
 
             if (curr == "sb")
             {
@@ -690,17 +895,17 @@ public:
         else if (EX.i_type == "0000011")
         {
 
-            string curr = EX.opperation;
+            string curr = EX.operation;
             if (curr == "lb")
             {
                 int d = readMemory(EX.EX);
                 if (d & (1 << 7))
                 {
-                    Register[EX.rd] = d - (1 << 8);
+                    mem.data = d - (1 << 8);
                 }
                 else
                 {
-                    Register[EX.rd] = d;
+                    mem.data = d;
                 }
             }
 
@@ -709,20 +914,20 @@ public:
                 int d = (readMemory(EX.EX + 3) << 24) + (readMemory(EX.EX + 2) << 16) + (readMemory(EX.EX + 1) << 8) + readMemory(EX.EX);
                 if (d & (1 << 31))
                 {
-                    Register[EX.rd] = d - (1LL << 32);
+                    mem.data = d - (1LL << 32);
                 }
                 else
                 {
-                    Register[EX.rd] = d;
+                    mem.data = d;
                 }
             }
             else if (curr == "lbu")
             {
-                Register[EX.rd] = readMemory(EX.EX);
+                mem.data = readMemory(EX.EX);
             }
             else if (curr == "lhu")
             {
-                Register[EX.rd] = readMemory(EX.EX) + (readMemory(EX.EX + 1) << 8);
+                mem.data = readMemory(EX.EX) + (readMemory(EX.EX + 1) << 8);
             }
         }
         return mem;
@@ -737,6 +942,14 @@ public:
         if (MEM.i_type == "0110011" || MEM.i_type == "0010011" || MEM.i_type == "1101111" || MEM.i_type == "1100111" || MEM.i_type == "0110111" || MEM.i_type == "0010111")
         {
             Register[MEM.rd] = MEM.EX;
+        }
+        else if (MEM.i_type == "0000011")
+        {
+            Register[MEM.rd] = MEM.data;
+        }
+        else if (MEM.i_type == "0100011")
+        {
+            // No write-back for store instructions
         }
     }
 
@@ -769,7 +982,7 @@ public:
     //         string IR = Fetch();
     //         outFile << "Fetch   :" << IR << " " << PC << endl;
     //         I_DATA data = decode(IR);
-    //         outFile << "Decode  :" << data.opperation << " ";
+    //         outFile << "Decode  :" << data.operation << " ";
     //         if (!(data.i_type == "0100011" || data.i_type == "1100011"))
     //         {
     //             outFile << "rd:" << data.rd;
@@ -798,7 +1011,6 @@ public:
     //         {
     //             outFile << "Memory  :" << "Not used" << endl;
     //         }
-
     //         write_back(data);
     //         if (data.i_type == "0100011" || data.i_type == "1100011")
     //         {
@@ -883,7 +1095,7 @@ public:
                 if (!IR.null)
                 {
                     active_stages = true;
-                    D = "Decode :    operation :" + Data_buffer.opperation + " Rd:" + to_string(Data_buffer.rd) + " Rs1:" + to_string(Data_buffer.rs1) + " Rs2:" + to_string(Data_buffer.rs2) + " imm:" + to_string(Data_buffer.immi) + " PC:" + to_string(Data_buffer.PC);
+                    D = "Decode :    operation :" + Data_buffer.operation + " Rd:" + to_string(Data_buffer.rd) + " Rs1:" + to_string(Data_buffer.rs1) + " Rs2:" + to_string(Data_buffer.rs2) + " imm:" + to_string(Data_buffer.immi) + " PC:" + to_string(Data_buffer.PC);
                 }
                 else
                 {
@@ -935,13 +1147,13 @@ public:
                 IR_Buffer.null = true;
             }
 
-            if (isBranch && stalls == 0)
+            if (flushing && stalls == 0)
             {
-                isBranch = false;
+                flushing = false;
                 IR_Buffer.null = true;
                 Data.null = true;
             }
-
+            cout << "Cycle " << cycles << endl;
             outFile << "Cycle " << cycles++ << endl;
             outFile << F << endl;
             outFile << D << endl;
@@ -952,10 +1164,16 @@ public:
         }
 
         outFile << "Total Cycles: " << cycles << endl;
+        outFile << PC << endl;
         saveRegisterToFile(register_file);
         saveMemoryToFile(memory_file);
         cout << "Simulation Completed" << endl;
         cout << "LIMIT" << limit_pc << endl;
+
+        for (auto &[key, value] : BPB)
+        {
+            cout << key << " " << value << endl;
+        }
     }
 };
 
