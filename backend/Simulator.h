@@ -458,7 +458,7 @@ public:
         }
         else if (opcode == "1100011")
         { // B-type
-            immi = Instruction.substr(0, 1) + Instruction.substr(24, 1) + Instruction.substr(1, 6) + Instruction.substr(20, 4) + "0";
+            immi = Instruction.substr(0, 1) + Instruction.substr(24, 1) + Instruction.substr(1, 6) + Instruction.substr(20, 4) + '0';
             // imm[12] + imm[11] + imm[10:5] + imm[4:1] (shifted left)
         }
         else if (opcode == "0110111" || opcode == "0010111")
@@ -467,7 +467,7 @@ public:
         }
         else if (opcode == "1101111")
         { // J-type
-            immi = Instruction.substr(0, 1) + Instruction.substr(12, 8) + Instruction.substr(11, 1) + Instruction.substr(1, 10) + "0";
+            immi = Instruction.substr(0, 1) + Instruction.substr(12, 8) + Instruction.substr(11, 1) + Instruction.substr(1, 10) + '0';
             // imm[20] + imm[19:12] + imm[11] + imm[10:1] (shifted left)
         }
         else
@@ -501,6 +501,12 @@ public:
         {
             data.immi = temp_immi;
         }
+        if (data.i_type == "1100011" || data.i_type == "1101111" || data.i_type == "1100111")
+        {
+            // Shift left by 1 for branch instructions
+            data.immi = data.immi << 1;
+        }
+
         data.null = false;
         data.PC = IR.PC;
 

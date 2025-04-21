@@ -313,7 +313,7 @@ private:
                 return;
             }
 
-            int offset = (labelAddress - currentAddress);
+            int offset = (labelAddress - currentAddress) >> 1;
 
             string imm = immediateToBinary(offset, 13);
 
@@ -330,7 +330,7 @@ private:
         else if (instructionType[instr] == "J")
         {
             int labelAddress = symTable.getAddress(tokens[2]);
-            int offset = (labelAddress - currentAddress);
+            int offset = (labelAddress - currentAddress) >> 1;
             string imm = immediateToBinary(offset, 21);
 
             binaryEncoding = imm[0] + imm.substr(10, 10) + imm[9] +
