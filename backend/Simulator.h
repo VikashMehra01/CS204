@@ -45,11 +45,13 @@ struct EX_DATA
     string i_type;
     string operation;
     bool null = true;
+    bool Hit = false;
 };
 struct MEMORY_DATA
 {
     int EX = 0;
     int rd;
+    int rs2;
     int address;
     int data;
     int PC;
@@ -970,6 +972,7 @@ public:
         EX_data.null = false;
         EX_data.PC = data.PC;
         Data.EX = EX_data.EX;
+        EX_data.Hit = !flushing;
 
         return EX_data;
     }
@@ -983,6 +986,7 @@ public:
         }
         mem.EX = EX.EX;
         mem.rd = EX.rd;
+        mem.rs2 = EX.rs2;
         mem.PC = EX.PC;
         mem.i_type = EX.i_type;
         mem.null = false;
@@ -1060,7 +1064,12 @@ public:
     void write_back(MEMORY_DATA MEM)
     {
 
-        if (MEM.null || MEM.rd == 0)
+        if (MEM.null)
+        {
+            return;
+        }
+        dynamic_instruction_count++;
+        if (MEM.rd == 0)
         {
             return;
         }
@@ -1076,7 +1085,6 @@ public:
         {
             // No write-back for store instructions
         }
-        dynamic_instruction_count++;
     }
 
     void saveRegisterToFile(const string &filename)
@@ -1130,11 +1138,17 @@ public:
             }
             outFile << endl;
             EX_DATA EX = execute(data);
-            outFile << "Execute :" << EX.EX << endl;
+            outFile << "Execute : Ex:" << EX.EX << " PC" << MEM.PC << endl;
             MEMORY_DATA MEM = memory(EX);
-            if (data.i_type == "0000011" || data.i_type == "0100011")
+            if (data.i_type == "0000011")
             {
-                outFile << "Memory  :" << Register[data.rd] << endl;
+                outFile << "Memory  :" << "Load " << "Data: " << MEM.data << " Address:" << MEM.EX << endl;
+                cycles += 1;
+            }
+            else if (data.i_type == "0100011")
+            {
+                outFile << "Memory  :" << "Store " << "Data: " << MEM.rs2 << " Address:" << MEM.EX << endl;
+                cycles += 1;
             }
             else
             {
@@ -1147,7 +1161,8 @@ public:
             }
             else
             {
-                outFile << "WriteBack   :" << Register[data.rd] << endl;
+                outFile << "WriteBack   :" << "Rd:" << data.rd << " Data:" << Register[data.rd] << endl;
+                cycles += 1;
             }
             if (print_registers)
             {
@@ -1158,7 +1173,7 @@ public:
                 }
             }
             outFile << "------------------------------------------------------------------------------------" << endl;
-            cycles++;
+            cycles += 3;
         }
         outFile << "Total Cycles: " << cycles << endl;
         outFile << "Total Instructions: " << dynamic_instruction_count << endl;
@@ -1199,10 +1214,10 @@ public:
 
             // WriteBack;
             write_back(MEM);
-            if (!MEM.null)
+            if (!MEM.null && (MEM.i_type == "0110011" || MEM.i_type == "0010011" || MEM.i_type == "0000011" || MEM.i_type == "1101111" || MEM.i_type == "1100111" || MEM.i_type == "0110111" || MEM.i_type == "0010111"))
             {
                 active_stages = true;
-                W = "WriteBack: " + to_string(MEM.rd) + " " + to_string(Register[MEM.rd]) + " PC:" + to_string(MEM.PC);
+                W = "WriteBack: Rd:" + to_string(MEM.rd) + " Data" + to_string(Register[MEM.rd]) + " PC:" + to_string(MEM.PC);
                 Instruction_map[MEM.PC / 4].push_back({cycles, W});
             }
             else
@@ -1214,10 +1229,17 @@ public:
 
             MEM = memory_buffer;
             // Memory
-            if (!EX.null)
+            if (!EX.null && (EX.i_type == "0000011" || EX.i_type == "0100011"))
             {
                 active_stages = true;
-                M = "Memory: " + to_string(memory_buffer.EX) + " " + to_string(memory_buffer.rd) + " PC:" + to_string(memory_buffer.PC);
+                if (memory_buffer.i_type == "0000011")
+                {
+                    M = "Memory:     Load  Data:" + to_string(memory_buffer.data) + " Address:" + to_string(memory_buffer.EX) + " PC:" + to_string(memory_buffer.PC);
+                }
+                else
+                {
+                    M = "Memory:     Store Data:" + to_string(memory_buffer.rs2) + " Address:" + to_string(memory_buffer.EX) + " PC:" + to_string(memory_buffer.PC);
+                }
                 Instruction_map[memory_buffer.PC / 4].push_back({cycles, M});
             }
             else
@@ -1231,7 +1253,11 @@ public:
             if (!Data.null)
             {
                 active_stages = true;
-                E = "Execute: " + to_string(EX_buffer.EX) + " " + to_string(EX_buffer.rd) + " PC:" + to_string(EX_buffer.PC);
+                E = "Execute: Ex:" + to_string(EX_buffer.EX) + " PC:" + to_string(EX_buffer.PC);
+                if (EX_buffer.i_type == "1100011")
+                {
+                    E += " HIT: " + to_string(EX_buffer.Hit);
+                }
                 Instruction_map[EX_buffer.PC / 4].push_back({cycles, E});
             }
             else
@@ -1345,7 +1371,10 @@ public:
                 // outFile << "------------------------------------------------------------------------------------" << endl;
             }
             cycles++;
-            outFile << "------------------------------------------------------------------------------------" << endl;
+            if (print_registers || print_pipeline_registers || print_BPU || printCycle)
+            {
+                outFile << "------------------------------------------------------------------------------------" << endl;
+            }
         }
         if (specificInstruction)
         {
@@ -1365,8 +1394,8 @@ public:
         outFile << "Total Control Hazards: " << No_of_control_hazards << endl;
         outFile << "Total Mispredictions: " << No_of_Mispredictions << endl;
         outFile << "Total Stalls: " << No_of_stalls_data_hazards + No_of_stalls_control_hazards << endl;
-        outFile << " Stalls due to Data Hazards: " << No_of_stalls_data_hazards << endl;
-        outFile << " Stalls due to Control Hazards: " << No_of_stalls_control_hazards << endl;
+        outFile << "Stalls due to Data Hazards: " << No_of_stalls_data_hazards << endl;
+        outFile << "Stalls due to Control Hazards: " << No_of_stalls_control_hazards << endl;
 
         saveRegisterToFile(register_file);
         saveMemoryToFile(memory_file);
@@ -1466,6 +1495,7 @@ public:
             if (count == 7 && specificInstruction)
             {
                 specificInstructionAddress = stoi(line);
+                specificInstructionAddress--;
             }
             count++;
         }

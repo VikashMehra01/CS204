@@ -1,7 +1,3 @@
-#Vikash Mehra
-#2023CSB1172
-#Question NO - 1
-
 .data
 size: .word 6
 array: .word 7, 5, 6, 1, 9, 17
