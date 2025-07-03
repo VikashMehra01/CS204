@@ -1,6 +1,5 @@
 # 🚀 RISC-V Assembler & Simulator
 
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20Windows%20%7C%20MacOS-lightgrey)
 ![Language](https://img.shields.io/badge/language-C%2B%2B-blue?logo=c%2B%2B)
 ![Frontend](https://img.shields.io/badge/frontend-React-brightgreen?logo=react)
@@ -52,7 +51,7 @@ Clone the repo and follow the steps below:
 git clone https://github.com/VikashMehra01/CS204.git
 cd CS204
 ```
-# Backend Setup (Assembler & Simulator)
+### 2️⃣  Backend Setup (Assembler & Simulator)
 ```
 cd backend
 # Compile the backend (assumes main.cpp as entry)
@@ -61,7 +60,7 @@ g++ -std=c++17 -o server main.cpp
 ./server
 ```
 
-# Frontend Setup (React GUI)
+### 3️⃣ Frontend Setup (React GUI)
 
 Open a new terminal:
 ```
@@ -71,10 +70,10 @@ npm start       # Launch the development server
 ```
 💡 How to Use
 
-    Open your browser and navigate to http://localhost:3000
+Open your browser and navigate to http://localhost:3000
 
-    Paste your RISC-V assembly code into the editor.
+Paste your RISC-V assembly code into the editor.
 
-    Click on Assemble & Simulate.
+Click on Assemble & Simulate.
 
-    Watch your code come to life:
+Watch your code come to life:
