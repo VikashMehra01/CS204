@@ -51,9 +51,9 @@ Clone the repo and follow the steps below:
 ```bash
 git clone https://github.com/VikashMehra01/CS204.git
 cd CS204
-
+```
 # Backend Setup (Assembler & Simulator)
-
+```
 cd backend
 # Compile the backend (assumes main.cpp as entry)
 g++ -std=c++17 -o server main.cpp
